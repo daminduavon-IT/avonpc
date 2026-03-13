@@ -1,0 +1,73 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { products } from '@/data/catalog';
+import { Search, Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+
+const AdminProducts = () => {
+  const [search, setSearch] = useState('');
+  const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Product Management</h1>
+        <Button variant="accent"><Plus className="h-4 w-4" /> Add Product</Button>
+      </div>
+
+      <div className="bg-card border rounded-xl">
+        <div className="p-4 border-b">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input type="text" placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted">
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">SKU</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Category</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Brand</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(p => (
+                <tr key={p.id} className="border-b last:border-0 hover:bg-muted/50">
+                  <td className="px-4 py-3">
+                    <div>
+                      <p className="font-medium text-foreground">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">{p.model}</p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{p.sku}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{p.category}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{p.brand}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${p.status === 'active' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                      {p.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      <button className="p-1.5 rounded hover:bg-muted"><Edit className="h-4 w-4 text-muted-foreground" /></button>
+                      <button className="p-1.5 rounded hover:bg-muted">
+                        {p.status === 'active' ? <Eye className="h-4 w-4 text-muted-foreground" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                      <button className="p-1.5 rounded hover:bg-muted"><Trash2 className="h-4 w-4 text-destructive" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminProducts;
