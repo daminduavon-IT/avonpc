@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QuoteProvider } from "@/context/QuoteContext";
+import { AuthProvider } from "@/context/AuthContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import QuoteDrawer from "@/components/QuoteDrawer";
@@ -51,44 +52,46 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner />
-      <QuoteProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Admin routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="products" element={<AdminProducts />} />
-              <Route path="categories" element={<AdminCategories />} />
-              <Route path="brands" element={<AdminBrands />} />
-              <Route path="quotes" element={<AdminQuotes />} />
-              <Route path="customers" element={<AdminCustomers />} />
-              <Route path="media" element={<AdminMedia />} />
-              <Route path="content" element={<AdminContent />} />
-              <Route path="reports" element={<AdminReports />} />
-              <Route path="settings" element={<AdminSettings />} />
-            </Route>
+      <AuthProvider>
+        <QuoteProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Admin routes */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="products" element={<AdminProducts />} />
+                <Route path="categories" element={<AdminCategories />} />
+                <Route path="brands" element={<AdminBrands />} />
+                <Route path="quotes" element={<AdminQuotes />} />
+                <Route path="customers" element={<AdminCustomers />} />
+                <Route path="media" element={<AdminMedia />} />
+                <Route path="content" element={<AdminContent />} />
+                <Route path="reports" element={<AdminReports />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
 
-            {/* Website routes */}
-            <Route path="/" element={<WebsiteLayout><Index /></WebsiteLayout>} />
-            <Route path="/about" element={<WebsiteLayout><About /></WebsiteLayout>} />
-            <Route path="/products" element={<WebsiteLayout><ProductListing /></WebsiteLayout>} />
-            <Route path="/products/:category" element={<WebsiteLayout><ProductListing /></WebsiteLayout>} />
-            <Route path="/product/:slug" element={<WebsiteLayout><ProductDetail /></WebsiteLayout>} />
-            <Route path="/brands" element={<WebsiteLayout><Brands /></WebsiteLayout>} />
-            <Route path="/industries" element={<WebsiteLayout><Industries /></WebsiteLayout>} />
-            <Route path="/contact" element={<WebsiteLayout><Contact /></WebsiteLayout>} />
-            <Route path="/request-quote" element={<WebsiteLayout><RequestQuote /></WebsiteLayout>} />
-            <Route path="/quality" element={<WebsiteLayout><Quality /></WebsiteLayout>} />
-            <Route path="/login" element={<WebsiteLayout><Login /></WebsiteLayout>} />
-            <Route path="/register" element={<WebsiteLayout><Register /></WebsiteLayout>} />
-            <Route path="/my-account" element={<WebsiteLayout><MyAccount /></WebsiteLayout>} />
-            <Route path="/privacy-policy" element={<WebsiteLayout><PrivacyPolicy /></WebsiteLayout>} />
-            <Route path="/terms" element={<WebsiteLayout><Terms /></WebsiteLayout>} />
-            <Route path="/sitemap" element={<WebsiteLayout><Sitemap /></WebsiteLayout>} />
-            <Route path="*" element={<WebsiteLayout><NotFound /></WebsiteLayout>} />
-          </Routes>
-        </BrowserRouter>
-      </QuoteProvider>
+              {/* Website routes */}
+              <Route path="/" element={<WebsiteLayout><Index /></WebsiteLayout>} />
+              <Route path="/about" element={<WebsiteLayout><About /></WebsiteLayout>} />
+              <Route path="/products" element={<WebsiteLayout><ProductListing /></WebsiteLayout>} />
+              <Route path="/products/:category" element={<WebsiteLayout><ProductListing /></WebsiteLayout>} />
+              <Route path="/product/:slug" element={<WebsiteLayout><ProductDetail /></WebsiteLayout>} />
+              <Route path="/brands" element={<WebsiteLayout><Brands /></WebsiteLayout>} />
+              <Route path="/industries" element={<WebsiteLayout><Industries /></WebsiteLayout>} />
+              <Route path="/contact" element={<WebsiteLayout><Contact /></WebsiteLayout>} />
+              <Route path="/request-quote" element={<WebsiteLayout><RequestQuote /></WebsiteLayout>} />
+              <Route path="/quality" element={<WebsiteLayout><Quality /></WebsiteLayout>} />
+              <Route path="/login" element={<WebsiteLayout><Login /></WebsiteLayout>} />
+              <Route path="/register" element={<WebsiteLayout><Register /></WebsiteLayout>} />
+              <Route path="/my-account" element={<WebsiteLayout><MyAccount /></WebsiteLayout>} />
+              <Route path="/privacy-policy" element={<WebsiteLayout><PrivacyPolicy /></WebsiteLayout>} />
+              <Route path="/terms" element={<WebsiteLayout><Terms /></WebsiteLayout>} />
+              <Route path="/sitemap" element={<WebsiteLayout><Sitemap /></WebsiteLayout>} />
+              <Route path="*" element={<WebsiteLayout><NotFound /></WebsiteLayout>} />
+            </Routes>
+          </BrowserRouter>
+        </QuoteProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

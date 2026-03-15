@@ -4,18 +4,37 @@ import { useQuote } from '@/context/QuoteContext';
 import { Trash2, Plus, Minus, Send, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { submitQuote } from '@/lib/firestore-services';
 
 const RequestQuote = () => {
   const { items, removeItem, updateQuantity, clearCart } = useQuote();
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: '', company: '', email: '', phone: '', country: '', state: '', city: '', message: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Your quotation request has been submitted successfully! Our team will contact you within 24 hours.');
-    clearCart();
-    setForm({ name: '', company: '', email: '', phone: '', country: '', state: '', city: '', message: '' });
+    setLoading(true);
+    try {
+      await submitQuote({
+        ...form,
+        products: items.map(item => ({
+          id: item.id,
+          name: item.name,
+          brand: item.brand,
+          model: item.model,
+          quantity: item.quantity,
+        })),
+      });
+      toast.success('Your quotation request has been submitted successfully! Our team will contact you within 24 hours.');
+      clearCart();
+      setForm({ name: '', company: '', email: '', phone: '', country: '', state: '', city: '', message: '' });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to submit quote. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,8 +116,8 @@ const RequestQuote = () => {
                   <p className="font-medium text-foreground mb-1">📎 Attachment (optional)</p>
                   <p>Upload a document with your detailed requirements. (Feature coming soon)</p>
                 </div>
-                <Button type="submit" variant="accent" size="lg" className="w-full sm:w-auto">
-                  <Send className="h-4 w-4" /> Submit Quotation Request
+                <Button type="submit" variant="accent" size="lg" className="w-full sm:w-auto" disabled={loading}>
+                  <Send className="h-4 w-4" /> {loading ? 'Submitting...' : 'Submit Quotation Request'}
                 </Button>
                 <p className="text-xs text-muted-foreground">
                   By submitting this form, you agree to our terms. We typically respond within 24 business hours.
