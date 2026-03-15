@@ -1,8 +1,11 @@
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Layers, Tag, FileText, Users,
   Image, Settings, BarChart3, Globe, PanelLeft, LogOut
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 const sidebarItems = [
   { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -19,7 +22,19 @@ const sidebarItems = [
 
 const AdminLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, logout } = useAuth();
   const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success('Logged out successfully.');
+      navigate('/login');
+    } catch (err) {
+      toast.error('Failed to logout.');
+    }
+  };
 
   return (
     <div className="min-h-screen flex bg-muted">
@@ -42,10 +57,13 @@ const AdminLayout = () => {
             </Link>
           ))}
         </nav>
-        <div className="p-3 border-t border-primary-foreground/10">
+        <div className="p-3 border-t border-primary-foreground/10 space-y-1">
           <Link to="/" className="flex items-center gap-3 px-3 py-2.5 text-sm text-primary-foreground/70 hover:text-primary-foreground rounded-lg btn-transition">
-            <LogOut className="h-4 w-4" /> Back to Website
+            <Globe className="h-4 w-4" /> Back to Website
           </Link>
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-primary-foreground/70 hover:text-primary-foreground rounded-lg btn-transition">
+            <LogOut className="h-4 w-4" /> Logout
+          </button>
         </div>
       </aside>
 
@@ -56,7 +74,10 @@ const AdminLayout = () => {
           <button className="lg:hidden p-2"><PanelLeft className="h-5 w-5" /></button>
           <h2 className="text-sm font-semibold text-foreground">Admin Panel</h2>
           <div className="ml-auto flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">admin@avonpc.com</span>
+            <span className="text-sm text-muted-foreground">{user?.email || 'admin@avonpc.com'}</span>
+            {profile?.role && (
+              <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">{profile.role}</span>
+            )}
           </div>
         </header>
         <main className="flex-1 p-4 lg:p-6 overflow-y-auto">

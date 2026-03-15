@@ -1,15 +1,36 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import avonLogo from '@/assets/avon-logo.png';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const Register = () => {
   const [form, setForm] = useState({ name: '', email: '', company: '', password: '', confirm: '' });
+  const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.info('Registration functionality will be available soon.');
+    if (form.password !== form.confirm) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+    if (form.password.length < 6) {
+      toast.error('Password must be at least 6 characters.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await register(form.email, form.password, form.name, form.company);
+      toast.success('Account created successfully!');
+      navigate('/my-account');
+    } catch (err: any) {
+      toast.error(err.message || 'Registration failed.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,7 +53,9 @@ const Register = () => {
               className="w-full px-4 py-2.5 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
             <input type="password" placeholder="Confirm Password *" required value={form.confirm} onChange={e => setForm({...form, confirm: e.target.value})}
               className="w-full px-4 py-2.5 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-            <Button type="submit" className="w-full">Create Account</Button>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </Button>
           </form>
           <p className="text-sm text-muted-foreground text-center mt-4">
             Already have an account? <Link to="/login" className="text-primary font-medium hover:underline">Sign In</Link>

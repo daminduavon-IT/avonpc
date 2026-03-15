@@ -2,14 +2,24 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Phone, Mail, MapPin, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { submitInquiry } from '@/lib/firestore-services';
 
 const Contact = () => {
   const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', message: '' });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Your inquiry has been submitted. We will get back to you shortly!');
-    setForm({ name: '', email: '', phone: '', company: '', message: '' });
+    setLoading(true);
+    try {
+      await submitInquiry(form);
+      toast.success('Your inquiry has been submitted. We will get back to you shortly!');
+      setForm({ name: '', email: '', phone: '', company: '', message: '' });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to submit inquiry. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,7 +51,9 @@ const Contact = () => {
                 </div>
                 <textarea placeholder="Your Message *" required rows={5} value={form.message} onChange={e => setForm({...form, message: e.target.value})}
                   className="w-full px-4 py-2.5 bg-card border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
-                <Button type="submit" variant="accent" size="lg"><Send className="h-4 w-4" /> Send Inquiry</Button>
+                <Button type="submit" variant="accent" size="lg" disabled={loading}>
+                  <Send className="h-4 w-4" /> {loading ? 'Sending...' : 'Send Inquiry'}
+                </Button>
               </form>
             </div>
             <div className="space-y-6">
