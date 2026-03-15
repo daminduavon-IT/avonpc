@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Menu, X, ChevronDown, FileText } from 'lucide-react';
+import { Search, Menu, X, ChevronDown, FileText, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
 import { useAuth } from '@/context/AuthContext';
+import { useSettings } from '@/context/SettingsContext';
 import avonLogo from '@/assets/avon-logo.png';
 
 const navItems = [
@@ -33,6 +34,7 @@ const Header = () => {
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const { itemCount, setIsOpen } = useQuote();
   const { user } = useAuth();
+  const { settings } = useSettings();
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
@@ -43,8 +45,8 @@ const Header = () => {
       <div className="bg-topbar text-topbar-foreground text-xs sm:text-sm">
         <div className="container-main flex items-center justify-between py-2">
           <div className="flex items-center gap-4">
-            <span>📞 +91 79 2583 1234</span>
-            <span className="hidden sm:inline">✉️ info@avonpc.com</span>
+            <span>📞 {settings?.phone || '+91 79 2583 1234'}</span>
+            <span className="hidden sm:inline">✉️ {settings?.email || 'info@avonpc.com'}</span>
           </div>
           <div className="flex items-center gap-3">
             {user ? (
@@ -81,9 +83,8 @@ const Header = () => {
               >
                 <Link
                   to={item.path}
-                  className={`px-3 py-2 text-sm font-medium rounded-md btn-transition flex items-center gap-1 ${
-                    isActive(item.path) ? 'text-primary bg-primary/5' : 'text-foreground hover:text-primary hover:bg-primary/5'
-                  }`}
+                  className={`px-3 py-2 text-sm font-medium rounded-md btn-transition flex items-center gap-1 ${isActive(item.path) ? 'text-primary bg-primary/5' : 'text-foreground hover:text-primary hover:bg-primary/5'
+                    }`}
                 >
                   {item.label}
                   {item.children && <ChevronDown className="h-3 w-3" />}
@@ -142,9 +143,8 @@ const Header = () => {
               {navItems.map((item) => (
                 <div key={item.path}>
                   <Link to={item.path} onClick={() => setMobileOpen(false)}
-                    className={`block px-3 py-2.5 text-sm font-medium rounded-md ${
-                      isActive(item.path) ? 'text-primary bg-primary/5' : 'text-foreground hover:bg-muted'
-                    }`}>
+                    className={`block px-3 py-2.5 text-sm font-medium rounded-md ${isActive(item.path) ? 'text-primary bg-primary/5' : 'text-foreground hover:bg-muted'
+                      }`}>
                     {item.label}
                   </Link>
                   {item.children && (

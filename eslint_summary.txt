@@ -1,0 +1,67 @@
+C:\Users\Damidu Gimhan\avonpc\src\components\ui\badge.tsx
+  29:17 Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components. (react-refresh/only-export-components)
+
+C:\Users\Damidu Gimhan\avonpc\src\components\ui\button.tsx
+  50:18 Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components. (react-refresh/only-export-components)
+
+C:\Users\Damidu Gimhan\avonpc\src\components\ui\command.tsx
+  24:11 An interface declaring no members is equivalent to its supertype. (@typescript-eslint/no-empty-object-type)
+
+C:\Users\Damidu Gimhan\avonpc\src\components\ui\form.tsx
+  129:10 Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components. (react-refresh/only-export-components)
+
+C:\Users\Damidu Gimhan\avonpc\src\components\ui\navigation-menu.tsx
+  111:3 Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components. (react-refresh/only-export-components)
+
+C:\Users\Damidu Gimhan\avonpc\src\components\ui\sidebar.tsx
+  636:3 Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components. (react-refresh/only-export-components)
+
+C:\Users\Damidu Gimhan\avonpc\src\components\ui\sonner.tsx
+  27:19 Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components. (react-refresh/only-export-components)
+
+C:\Users\Damidu Gimhan\avonpc\src\components\ui\textarea.tsx
+  5:18 An interface declaring no members is equivalent to its supertype. (@typescript-eslint/no-empty-object-type)
+
+C:\Users\Damidu Gimhan\avonpc\src\components\ui\toggle.tsx
+  37:18 Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components. (react-refresh/only-export-components)
+
+C:\Users\Damidu Gimhan\avonpc\src\context\AuthContext.tsx
+  21:14 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  37:14 Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components. (react-refresh/only-export-components)
+
+C:\Users\Damidu Gimhan\avonpc\src\context\QuoteContext.tsx
+  26:14 Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components. (react-refresh/only-export-components)
+
+C:\Users\Damidu Gimhan\avonpc\src\lib\firestore-services.ts
+  33:15 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  34:15 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  91:15 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  122:15 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  161:15 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  162:15 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  190:15 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  204:15 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+C:\Users\Damidu Gimhan\avonpc\src\pages\Contact.tsx
+  18:19 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+C:\Users\Damidu Gimhan\avonpc\src\pages\Login.tsx
+  26:19 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  38:19 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+C:\Users\Damidu Gimhan\avonpc\src\pages\Register.tsx
+  29:19 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+C:\Users\Damidu Gimhan\avonpc\src\pages\RequestQuote.tsx
+  33:19 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+C:\Users\Damidu Gimhan\avonpc\src\pages\admin\AdminProducts.tsx
+  51:54 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  52:92 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+C:\Users\Damidu Gimhan\avonpc\src\pages\admin\AdminSettings.tsx
+  30:19 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  82:33 Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+C:\Users\Damidu Gimhan\avonpc\tailwind.config.ts
+  98:13 A `require()` style import is forbidden. (@typescript-eslint/no-require-imports)

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation, Outlet, useNavigate, Navigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Layers, Tag, FileText, Users,
   Image, Settings, BarChart3, Globe, PanelLeft, LogOut
@@ -23,8 +23,14 @@ const sidebarItems = [
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, logout } = useAuth();
+  const { user, profile, loading, logout } = useAuth();
   const isActive = (path: string) => location.pathname === path;
+
+  // Protect admin route
+  if (!loading && (!user || profile?.role !== 'admin')) {
+    toast.error('Unauthorized access. Admin privileges required.');
+    return <Navigate to="/login" replace />;
+  }
 
   const handleLogout = async () => {
     try {
@@ -48,9 +54,8 @@ const AdminLayout = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm btn-transition ${
-                isActive(item.path) ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'text-primary-foreground/70 hover:bg-sidebar-accent/50 hover:text-primary-foreground'
-              }`}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm btn-transition ${isActive(item.path) ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'text-primary-foreground/70 hover:bg-sidebar-accent/50 hover:text-primary-foreground'
+                }`}
             >
               <item.icon className="h-4 w-4" />
               {item.label}

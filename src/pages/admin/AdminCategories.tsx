@@ -1,40 +1,180 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { categories } from '@/data/catalog';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, ImagePlus } from 'lucide-react';
+import { getCategories, deleteCategory, addCategory, updateCategory, FirestoreCategory } from '@/lib/firestore-services';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { uploadToCloudinary } from '@/lib/cloudinary-services';
+import { toast } from 'sonner';
 
-const AdminCategories = () => (
-  <div>
-    <div className="flex items-center justify-between mb-6">
-      <h1 className="text-2xl font-bold text-foreground">Category Management</h1>
-      <Button variant="accent"><Plus className="h-4 w-4" /> Add Category</Button>
-    </div>
+const AdminCategories = () => {
+  const [categories, setCategories] = useState<FirestoreCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const initialForm = { name: '', slug: '', description: '', image: '' };
+  const [formData, setFormData] = useState(initialForm);
+  const [saving, setSaving] = useState(false);
+  const [imgUploading, setImgUploading] = useState(false);
 
-    <div className="bg-card border rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted">
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Category</th>
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Slug</th>
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Products</th>
-            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {categories.map(c => (
-            <tr key={c.id} className="border-b last:border-0 hover:bg-muted/50">
-              <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
-              <td className="px-4 py-3 text-muted-foreground">{c.slug}</td>
-              <td className="px-4 py-3 text-muted-foreground">{c.productCount}</td>
-              <td className="px-4 py-3 flex gap-1">
-                <button className="p-1.5 rounded hover:bg-muted"><Edit className="h-4 w-4 text-muted-foreground" /></button>
-                <button className="p-1.5 rounded hover:bg-muted"><Trash2 className="h-4 w-4 text-destructive" /></button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  useEffect(() => { loadCategories(); }, []);
+
+  const loadCategories = async () => {
+    try { setCategories(await getCategories()); }
+    catch { toast.error('Failed to load categories'); }
+    finally { setLoading(false); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this category?')) return;
+    try { await deleteCategory(id); setCategories(p => p.filter(c => c.id !== id)); toast.success('Category deleted'); }
+    catch { toast.error('Failed to delete category'); }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImgUploading(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      setFormData(p => ({ ...p, image: url }));
+      toast.success('Image uploaded!');
+    } catch { toast.error('Upload failed'); }
+    finally { setImgUploading(false); }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (editingId) {
+        await updateCategory(editingId, formData);
+        setCategories(p => p.map(c => c.id === editingId ? { ...c, ...formData } : c));
+        toast.success('Category updated successfully');
+      } else {
+        const newId = await addCategory(formData);
+        setCategories(p => [...p, { id: newId, ...formData }]);
+        toast.success('Category added successfully');
+      }
+      setOpen(false);
+      setEditingId(null);
+      setFormData(initialForm);
+    } catch {
+      toast.error(editingId ? 'Failed to update category' : 'Failed to create category');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEdit = (category: FirestoreCategory) => {
+    setEditingId(category.id!);
+    const { id, createdAt, ...rest } = category;
+    setFormData(rest as any);
+    setOpen(true);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Category Management</h1>
+        <Dialog open={open} onOpenChange={(val) => {
+          setOpen(val);
+          if (!val) {
+            setEditingId(null);
+            setFormData(initialForm);
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button variant="accent"><Plus className="h-4 w-4 mr-2" /> Add Category</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{editingId ? 'Edit Category' : 'Add New Category'}</DialogTitle></DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="cname">Category Name</Label>
+                <Input id="cname" required value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                  placeholder="e.g. Glassware" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cslug">Slug (URL snippet)</Label>
+                <Input id="cslug" required value={formData.slug} onChange={e => setFormData({ ...formData, slug: e.target.value })} placeholder="e.g. glassware" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cdesc">Description</Label>
+                <Textarea id="cdesc" required value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Category description..." />
+              </div>
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label>Category Image</Label>
+                <label className="flex items-center gap-3 cursor-pointer border-2 border-dashed rounded-xl p-4 hover:bg-muted transition-colors">
+                  {formData.image ? (
+                    <img src={formData.image} alt="Category" className="h-16 w-16 object-cover rounded-lg" />
+                  ) : (
+                    <div className="h-16 w-16 bg-muted rounded-lg flex items-center justify-center">
+                      {imgUploading ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : <ImagePlus className="h-6 w-6 text-muted-foreground" />}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{imgUploading ? 'Uploading...' : formData.image ? 'Change image' : 'Upload category image'}</p>
+                    <p className="text-xs text-muted-foreground">Shown on website. PNG, JPG, WebP.</p>
+                  </div>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={imgUploading} />
+                </label>
+              </div>
+              <Button type="submit" variant="accent" className="w-full" disabled={saving || imgUploading}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} {editingId ? 'Update Category' : 'Create Category'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {loading ? (
+        <div className="p-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      ) : (
+        <div className="bg-card border rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted">
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Image</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Category</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Slug</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Description</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map(c => (
+                <tr key={c.id} className="border-b last:border-0 hover:bg-muted/50">
+                  <td className="px-4 py-3">
+                    <div className="h-12 w-16 rounded-lg bg-muted border overflow-hidden">
+                      {c.image ? (
+                        <img src={c.image} alt={c.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-muted-foreground/40 text-xs">No img</div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{c.slug}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs max-w-xs truncate">{c.description}</td>
+                  <td className="px-4 py-3 flex gap-1">
+                    <button className="p-1.5 rounded hover:bg-muted" onClick={() => handleEdit(c)}><Edit className="h-4 w-4 text-muted-foreground" /></button>
+                    <button className="p-1.5 rounded hover:bg-muted" onClick={() => handleDelete(c.id!)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 export default AdminCategories;

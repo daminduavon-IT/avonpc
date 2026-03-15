@@ -1,5 +1,5 @@
 import {
-  collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc,
+  collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, setDoc,
   query, where, orderBy, limit, serverTimestamp, Timestamp,
   DocumentData, QueryConstraint,
 } from 'firebase/firestore';
@@ -226,23 +226,84 @@ export const getCustomers = async () => {
 
 // ─── Website Settings ────────────────────────────────────────────────
 
+export interface WebsiteLocation {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  mapLink: string;
+}
+
+export interface HeroSlide {
+  image: string;
+  titleLine1: string;
+  titleLine2: string;
+  highlightWord: string;
+  subtitle: string;
+}
+
 export interface WebsiteSettings {
   companyName: string;
   email: string;
   phone: string;
-  address: string;
-  mapLink: string;
-  socialLinks: { facebook: string; linkedin: string; twitter: string; instagram: string };
+  locations: WebsiteLocation[];
+  socialLinks: {
+    facebook: string;
+    linkedin: string;
+    twitter: string;
+    instagram: string;
+  };
+  heroCarousel: HeroSlide[];
 }
 
 export const getSettings = async (): Promise<WebsiteSettings | null> => {
+  const defaults: WebsiteSettings = {
+    companyName: 'Avon Pharmo Chem (Pvt) Ltd',
+    email: 'info@avonpc.com',
+    phone: '+91 79 2583 1234',
+    locations: [
+      {
+        name: 'Main Office',
+        address: '123 Industrial Area, Ahmedabad, Gujarat 380015, India',
+        phone: '+91 79 2583 1234',
+        email: 'info@avonpc.com',
+        mapLink: ''
+      }
+    ],
+    socialLinks: { facebook: '', linkedin: '', twitter: '', instagram: '' },
+    heroCarousel: [
+      {
+        image: 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&q=80',
+        titleLine1: 'Trusted',
+        titleLine2: 'Equipment Supplier',
+        highlightWord: 'Laboratory',
+        subtitle: 'Glassware • Instruments • Safety Equipment • Lab Furniture'
+      },
+      {
+        image: 'https://images.unsplash.com/photo-1579154235602-3c2c2446051b?auto=format&fit=crop&q=80',
+        titleLine1: 'Advanced',
+        titleLine2: 'Solutions',
+        highlightWord: 'Scientific',
+        subtitle: 'Providing cutting-edge technology for precise research & analysis'
+      }
+    ]
+  };
+
   const snap = await getDoc(doc(db, 'settings', 'website'));
-  if (!snap.exists()) return null;
-  return snap.data() as WebsiteSettings;
+  if (!snap.exists()) return defaults;
+
+  const data = snap.data() as Partial<WebsiteSettings>;
+  return {
+    ...defaults,
+    ...data,
+    socialLinks: { ...defaults.socialLinks, ...(data.socialLinks || {}) },
+    locations: data.locations || defaults.locations,
+    heroCarousel: data.heroCarousel || defaults.heroCarousel
+  };
 };
 
 export const updateSettings = async (data: Partial<WebsiteSettings>) => {
-  await updateDoc(doc(db, 'settings', 'website'), data);
+  await setDoc(doc(db, 'settings', 'website'), data, { merge: true });
 };
 
 // ─── File Upload (Storage) ───────────────────────────────────────────

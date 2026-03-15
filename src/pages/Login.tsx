@@ -18,7 +18,11 @@ const Login = () => {
     try {
       await login(email, password);
       toast.success('Logged in successfully!');
-      navigate('/my-account');
+      if (email === 'admin@avonpc.com') {
+        navigate('/admin');
+      } else {
+        navigate('/my-account');
+      }
     } catch (err: any) {
       toast.error(err.message || 'Login failed. Please check your credentials.');
     } finally {

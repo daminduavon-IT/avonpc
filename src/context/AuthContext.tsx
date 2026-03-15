@@ -49,13 +49,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        try {
-          const profileDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          if (profileDoc.exists()) {
-            setProfile(profileDoc.data() as UserProfile);
+        if (firebaseUser.email === 'admin@avonpc.com') {
+          // Hardcode admin profile for this specific user
+          setProfile({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: 'System Admin',
+            company: 'Avon Pharmo Chem',
+            phone: '',
+            role: 'admin',
+            createdAt: new Date(),
+          });
+        } else {
+          try {
+            const profileDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+            if (profileDoc.exists()) {
+              setProfile(profileDoc.data() as UserProfile);
+            }
+          } catch (err) {
+            console.error('Error fetching profile:', err);
           }
-        } catch (err) {
-          console.error('Error fetching profile:', err);
         }
       } else {
         setProfile(null);
