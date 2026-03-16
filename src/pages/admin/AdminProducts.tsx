@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Edit, Trash2, Eye, EyeOff, Loader2, ImagePlus, FlaskConical } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, EyeOff, Loader2, ImagePlus, FlaskConical, FileText } from 'lucide-react';
 import { getProducts, getCategories, getBrands, deleteProduct, updateProduct, addProduct, FirestoreProduct, FirestoreCategory, FirestoreBrand } from '@/lib/firestore-services';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -20,12 +20,13 @@ const AdminProducts = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const [specUploading, setSpecUploading] = useState(false);
 
   const initialForm = {
     name: '', slug: '', brand: '', category: '', model: '', sku: '',
     shortDescription: '', fullDescription: '', specifications: [],
     applications: [], features: [], image: '', images: [],
-    featured: false, status: 'active' as const, tags: []
+    featured: false, status: 'active' as const, tags: [], specSheetUrl: ''
   };
 
   const [formData, setFormData] = useState<Omit<FirestoreProduct, 'id' | 'createdAt' | 'updatedAt'>>(initialForm);
@@ -108,6 +109,21 @@ const AdminProducts = () => {
     }
   };
 
+  const handleSpecUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSpecUploading(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      setFormData(prev => ({ ...prev, specSheetUrl: url }));
+      toast.success('Technical specification uploaded');
+    } catch {
+      toast.error('Failed to upload specification');
+    } finally {
+      setSpecUploading(false);
+    }
+  };
+
   const handleToggleStatus = async (id: string, current: string) => {
     const newStatus = current === 'active' ? 'inactive' : 'active';
     try {
@@ -171,6 +187,28 @@ const AdminProducts = () => {
                 </div>
               </div>
 
+              <div className="space-y-2 col-span-2">
+                <Label>Technical Specification (PDF/Doc)</Label>
+                <div className="flex items-center gap-3">
+                  <label className="flex-1 flex items-center gap-2 cursor-pointer border rounded-md px-3 py-2 bg-background text-sm text-muted-foreground hover:bg-muted transition-colors">
+                    {specUploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileText className="h-4 w-4" />
+                    )}
+                    {specUploading ? 'Uploading...' : 'Choose spec file to upload'}
+                    <input type="file" className="hidden" onChange={handleSpecUpload} disabled={specUploading} />
+                  </label>
+                  {formData.specSheetUrl && (
+                    <div className="h-10 w-10 flex items-center justify-center bg-primary/10 rounded border">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                  )}
+                </div>
+                {formData.specSheetUrl && (
+                  <p className="text-xs text-primary truncate">{formData.specSheetUrl}</p>
+                )}
+              </div>
               <div className="space-y-2 col-span-2">
                 <Label>Product Image</Label>
                 <div className="flex items-center gap-3">

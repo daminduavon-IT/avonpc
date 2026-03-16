@@ -27,6 +27,7 @@ export interface FirestoreProduct {
   featured: boolean;
   status: 'active' | 'inactive';
   tags: string[];
+  specSheetUrl?: string;
   seoTitle?: string;
   seoDescription?: string;
   displayOrder?: number;
@@ -156,6 +157,7 @@ export interface QuoteRequest {
   message: string;
   products: { id: string; name: string; brand: string; model: string; quantity: number }[];
   status: 'New' | 'In Review' | 'Quotation Sent' | 'Follow Up' | 'Closed';
+  userId?: string;
   internalNotes?: string;
   assignedTo?: string;
   createdAt?: any;
@@ -168,6 +170,14 @@ export const getQuotes = async () => {
   const q = query(quotesCol, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as QuoteRequest));
+};
+
+export const getUserQuotes = async (userId: string) => {
+  const q = query(quotesCol, where('userId', '==', userId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs
+    .map(d => ({ id: d.id, ...d.data() } as QuoteRequest))
+    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 };
 
 export const getQuoteById = async (id: string) => {
@@ -273,7 +283,7 @@ export const getSettings = async (): Promise<WebsiteSettings | null> => {
     socialLinks: { facebook: '', linkedin: '', twitter: '', instagram: '' },
     heroCarousel: [
       {
-        image: 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&q=80',
+        image: 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format(c)&fit=crop&q=80',
         titleLine1: 'Trusted',
         titleLine2: 'Equipment Supplier',
         highlightWord: 'Laboratory',
@@ -322,11 +332,12 @@ export const deleteFile = async (path: string) => {
 // ─── Dashboard Stats ─────────────────────────────────────────────────
 
 export const getDashboardStats = async () => {
-  const [products, categories, brands, quotes] = await Promise.all([
+  const [products, categories, brands, quotes, inquiriesSnap] = await Promise.all([
     getDocs(productsCol),
     getDocs(categoriesCol),
     getDocs(brandsCol),
     getDocs(quotesCol),
+    getDocs(inquiriesCol)
   ]);
 
   return {
@@ -334,5 +345,6 @@ export const getDashboardStats = async () => {
     totalCategories: categories.size,
     totalBrands: brands.size,
     totalQuotes: quotes.size,
+    totalInquiries: inquiriesSnap.size
   };
 };

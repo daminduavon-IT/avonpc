@@ -10,16 +10,37 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { submitQuote } from '@/lib/firestore-services';
 
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
+
 const STEPS = ['Review Products', 'Your Details', 'Confirm'];
 
 const RequestQuote = () => {
   const { items, removeItem, updateQuantity, clearCart, itemCount } = useQuote();
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
-    name: '', company: '', email: '', phone: '',
+    name: profile?.displayName || '',
+    company: profile?.company || '',
+    email: profile?.email || '',
+    phone: profile?.phone || '',
     country: '', state: '', city: '', message: ''
+  });
+
+  // Update form when profile loads
+  useState(() => {
+    if (profile) {
+      setForm(prev => ({
+        ...prev,
+        name: profile.displayName || prev.name,
+        company: profile.company || prev.company,
+        email: profile.email || prev.email,
+        phone: profile.phone || prev.phone
+      }));
+    }
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,6 +53,7 @@ const RequestQuote = () => {
     try {
       await submitQuote({
         ...form,
+        userId: user?.uid,
         products: items.map(item => ({
           id: item.id,
           name: item.name,
@@ -247,78 +269,103 @@ const RequestQuote = () => {
               </div>
 
               {/* Right: form */}
-              <div className="lg:col-span-2">
+                  <div className="lg:col-span-2">
                 <h2 className="text-xl font-bold text-foreground mb-4">Your Contact Details</h2>
-                <form id="quote-form" onSubmit={handleSubmit} className="bg-card border rounded-2xl p-6 space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <input type="text" placeholder="Full Name *" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                
+                {!user ? (
+                  <div className="bg-card border rounded-2xl p-8 text-center space-y-6">
+                    <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                      <User className="h-8 w-8 text-primary" />
                     </div>
-                    <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <input type="text" placeholder="Company / Organisation *" required value={form.company} onChange={e => setForm({ ...form, company: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">Sign In Required</h3>
+                      <p className="text-sm text-muted-foreground max-w-sm mx-auto mt-2">
+                        To request a quotation and track your requests, you must have an account with us.
+                      </p>
                     </div>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <input type="email" placeholder="Email Address *" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
-                    </div>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <input type="tel" placeholder="Phone Number *" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                      <Button variant="accent" onClick={() => navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`)} className="px-8">
+                        Sign In
+                      </Button>
+                      <Button variant="outline" onClick={() => navigate(`/register?redirect=${encodeURIComponent(location.pathname)}`)} className="px-8">
+                        Create Account
+                      </Button>
                     </div>
                   </div>
+                ) : (
+                  <>
+                    <form id="quote-form" onSubmit={handleSubmit} className="bg-card border rounded-2xl p-6 space-y-4">
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input type="text" placeholder="Full Name *" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                            className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                        </div>
+                        <div className="relative">
+                          <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input type="text" placeholder="Company / Organisation *" required value={form.company} onChange={e => setForm({ ...form, company: e.target.value })}
+                            className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                        </div>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input type="email" placeholder="Email Address *" required readOnly value={form.email}
+                            className="w-full pl-10 pr-4 py-3 bg-muted border rounded-xl text-sm outline-none cursor-not-allowed text-muted-foreground" />
+                        </div>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input type="tel" placeholder="Phone Number *" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
+                            className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                        </div>
+                      </div>
 
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <input type="text" placeholder="Country" value={form.country} onChange={e => setForm({ ...form, country: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                      <div className="grid sm:grid-cols-3 gap-4">
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input type="text" placeholder="Country" value={form.country} onChange={e => setForm({ ...form, country: e.target.value })}
+                            className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                        </div>
+                        <input type="text" placeholder="State / Province" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })}
+                          className="w-full px-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                        <input type="text" placeholder="City" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })}
+                          className="w-full px-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                      </div>
+
+                      <div className="relative">
+                        <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <textarea
+                          placeholder="Additional requirements, specifications, or questions... (optional)"
+                          rows={4}
+                          value={form.message}
+                          onChange={e => setForm({ ...form, message: e.target.value })}
+                          className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                        />
+                      </div>
+
+                      <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-muted-foreground">
+                        <p>🔒 Your information is kept confidential and will only be used to prepare your quotation. We typically respond within <strong className="text-foreground">24 business hours</strong>.</p>
+                      </div>
+                    </form>
+
+                    <div className="flex items-center justify-between mt-4">
+                      <Button variant="outline" onClick={() => setStep(0)}>
+                        <ArrowRight className="h-4 w-4 rotate-180 mr-2" /> Back
+                      </Button>
+                      <Button
+                        type="submit"
+                        form="quote-form"
+                        variant="accent"
+                        className="h-12 px-8 text-base"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <><span className="animate-spin mr-2">⏳</span>Submitting...</>
+                        ) : (
+                          <><Send className="h-4 w-4 mr-2" />Submit Quotation Request</>
+                        )}
+                      </Button>
                     </div>
-                    <input type="text" placeholder="State / Province" value={form.state} onChange={e => setForm({ ...form, state: e.target.value })}
-                      className="w-full px-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
-                    <input type="text" placeholder="City" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })}
-                      className="w-full px-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
-                  </div>
-
-                  <div className="relative">
-                    <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <textarea
-                      placeholder="Additional requirements, specifications, or questions... (optional)"
-                      rows={4}
-                      value={form.message}
-                      onChange={e => setForm({ ...form, message: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-background border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
-                    />
-                  </div>
-
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-muted-foreground">
-                    <p>🔒 Your information is kept confidential and will only be used to prepare your quotation. We typically respond within <strong className="text-foreground">24 business hours</strong>.</p>
-                  </div>
-                </form>
-
-                <div className="flex items-center justify-between mt-4">
-                  <Button variant="outline" onClick={() => setStep(0)}>
-                    <ArrowRight className="h-4 w-4 rotate-180 mr-2" /> Back
-                  </Button>
-                  <Button
-                    type="submit"
-                    form="quote-form"
-                    variant="accent"
-                    className="h-12 px-8 text-base"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <><span className="animate-spin mr-2">⏳</span>Submitting...</>
-                    ) : (
-                      <><Send className="h-4 w-4 mr-2" />Submit Quotation Request</>
-                    )}
-                  </Button>
-                </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

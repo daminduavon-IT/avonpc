@@ -113,6 +113,9 @@ const QuoteDrawer = () => {
         {items.length > 0 && (
           <div className="border-t p-4 space-y-3 bg-card">
             <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground italic">Note: Account required to submit request</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Total items selected:</span>
               <span className="font-bold text-foreground">{itemCount}</span>
             </div>

@@ -37,6 +37,7 @@ import AdminMedia from "./pages/admin/AdminMedia";
 import AdminContent from "./pages/admin/AdminContent";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminInquiries from "./pages/admin/AdminInquiries";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
                   <Route path="content" element={<AdminContent />} />
                   <Route path="reports" element={<AdminReports />} />
                   <Route path="settings" element={<AdminSettings />} />
+                  <Route path="inquiries" element={<AdminInquiries />} />
                 </Route>
 
                 {/* Website routes */}

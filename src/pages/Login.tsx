@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import avonLogo from '@/assets/avon-logo.png';
 import { toast } from 'sonner';
@@ -11,6 +11,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { login, resetPassword } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +22,8 @@ const Login = () => {
       toast.success('Logged in successfully!');
       if (email === 'admin@avonpc.com') {
         navigate('/admin');
+      } else if (redirect) {
+        navigate(redirect);
       } else {
         navigate('/my-account');
       }
@@ -62,7 +66,7 @@ const Login = () => {
             Forgot password?
           </button>
           <p className="text-sm text-muted-foreground text-center mt-4">
-            Don't have an account? <Link to="/register" className="text-primary font-medium hover:underline">Register</Link>
+            Don't have an account? <Link to={`/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="text-primary font-medium hover:underline">Register</Link>
           </p>
         </div>
       </div>

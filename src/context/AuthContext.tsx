@@ -29,6 +29,7 @@ interface AuthContextType {
   register: (email: string, password: string, name: string, company: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   isAdmin: boolean;
 }
 
@@ -107,6 +108,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await sendPasswordResetEmail(auth, email);
   };
 
+  const updateProfileData = async (data: Partial<UserProfile>) => {
+    if (!user) return;
+    await setDoc(doc(db, 'users', user.uid), data, { merge: true });
+    setProfile(prev => prev ? { ...prev, ...data } : null);
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -116,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       register,
       logout,
       resetPassword,
+      updateProfile: updateProfileData,
       isAdmin: profile?.role === 'admin',
     }}>
       {children}

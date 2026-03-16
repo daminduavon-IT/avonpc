@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import avonLogo from '@/assets/avon-logo.png';
 import { toast } from 'sonner';
@@ -10,6 +10,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +27,11 @@ const Register = () => {
     try {
       await register(form.email, form.password, form.name, form.company);
       toast.success('Account created successfully!');
-      navigate('/my-account');
+      if (redirect) {
+        navigate(redirect);
+      } else {
+        navigate('/my-account');
+      }
     } catch (err: any) {
       toast.error(err.message || 'Registration failed.');
     } finally {
@@ -58,7 +64,7 @@ const Register = () => {
             </Button>
           </form>
           <p className="text-sm text-muted-foreground text-center mt-4">
-            Already have an account? <Link to="/login" className="text-primary font-medium hover:underline">Sign In</Link>
+            Already have an account? <Link to={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="text-primary font-medium hover:underline">Sign In</Link>
           </p>
         </div>
       </div>

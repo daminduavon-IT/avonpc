@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate, Navigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Layers, Tag, FileText, Users,
-  Image, Settings, BarChart3, Globe, PanelLeft, LogOut
+  Image, Settings, BarChart3, Globe, PanelLeft, LogOut, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
@@ -16,6 +16,7 @@ const sidebarItems = [
   { label: 'Customers', path: '/admin/customers', icon: Users },
   { label: 'Media', path: '/admin/media', icon: Image },
   { label: 'Content', path: '/admin/content', icon: Globe },
+  { label: 'Inquiries', path: '/admin/inquiries', icon: MessageSquare },
   { label: 'Reports', path: '/admin/reports', icon: BarChart3 },
   { label: 'Settings', path: '/admin/settings', icon: Settings },
 ];

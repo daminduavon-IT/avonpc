@@ -45,8 +45,8 @@ const Header = () => {
       <div className="bg-topbar text-topbar-foreground text-xs sm:text-sm">
         <div className="container-main flex items-center justify-between py-2">
           <div className="flex items-center gap-4">
-            <span>📞 {settings?.phone || '+91 79 2583 1234'}</span>
-            <span className="hidden sm:inline">✉️ {settings?.email || 'info@avonpc.com'}</span>
+            <span>📞 {settings?.phone || '+94 11 436 1909'}</span>
+            <span className="hidden sm:inline">✉️ {settings?.email || 'sales2@avonpclk.com'}</span>
           </div>
           <div className="flex items-center gap-3">
             {user ? (

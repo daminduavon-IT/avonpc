@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
 import { industries } from '@/data/catalog';
-import { getProducts, getCategories, FirestoreProduct, FirestoreCategory } from '@/lib/firestore-services';
+import { getProducts, getCategories, getBrands, FirestoreProduct, FirestoreCategory, FirestoreBrand } from '@/lib/firestore-services';
 import { useSettings } from '@/context/SettingsContext';
 import { Shield, Truck, Award, HeadphonesIcon, ArrowRight, FlaskConical, FileText, Loader2, CheckCircle2, Plus, Phone, Mail, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -21,6 +21,7 @@ const Index = () => {
   const { settings } = useSettings();
   const [featuredProducts, setFeaturedProducts] = useState<FirestoreProduct[]>([]);
   const [categories, setCategories] = useState<FirestoreCategory[]>([]);
+  const [brands, setBrands] = useState<FirestoreBrand[]>([]);
   const [loading, setLoading] = useState(true);
 
   const isInCart = (id?: string) => !!id && items.some(i => i.id === id);
@@ -54,12 +55,14 @@ const Index = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [fetchedProducts, fetchedCategories] = await Promise.all([
+        const [fetchedProducts, fetchedCategories, fetchedBrands] = await Promise.all([
           getProducts({ featured: true, status: 'active' }),
-          getCategories()
+          getCategories(),
+          getBrands()
         ]);
         setFeaturedProducts(fetchedProducts);
         setCategories(fetchedCategories);
+        setBrands(fetchedBrands);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -224,24 +227,29 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Brands (Hidden for now until we migrate to DB) */}
-      {/* 
-      <section className="section-padding bg-background">
-        <div className="container-main">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Brands We Supply</h2>
-            <p className="text-muted-foreground">Partnering with leading manufacturers worldwide</p>
+      {/* Brands */}
+      {brands.length > 0 && (
+        <section className="section-padding bg-white border-y">
+          <div className="container-main">
+            <div className="text-center mb-10">
+              <span className="text-accent font-bold uppercase tracking-widest text-[10px] mb-2 block">Our Partners</span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Brands We Supply</h2>
+              <p className="text-muted-foreground text-sm">Partnering with leading manufacturers worldwide</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
+              {brands.map((brand) => (
+                <div key={brand.id} className="bg-card border rounded-xl p-4 flex flex-col items-center justify-center min-h-[100px] card-hover group">
+                  {brand.logo ? (
+                    <img src={brand.logo} alt={brand.name} className="max-h-12 w-auto object-contain grayscale group-hover:grayscale-0 transition-all duration-300" />
+                  ) : (
+                    <span className="text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors">{brand.name}</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-            {brands.map((brand) => (
-              <div key={brand.id} className="bg-card border rounded-lg p-4 flex items-center justify-center h-20 card-hover">
-                <span className="text-sm font-semibold text-muted-foreground">{brand.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      */}
+        </section>
+      )}
 
       {/* Why Choose Us */}
       <section className="section-padding bg-muted">

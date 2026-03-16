@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Layers, Tag, FileText, TrendingUp, Clock } from 'lucide-react';
+import { Package, Layers, Tag, FileText, TrendingUp, Clock, MessageSquare } from 'lucide-react';
 import { getDashboardStats, getQuotes, QuoteRequest } from '@/lib/firestore-services';
 
 const statusColor: Record<string, string> = {
@@ -12,7 +12,7 @@ const statusColor: Record<string, string> = {
 };
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState({ totalProducts: 0, totalCategories: 0, totalBrands: 0, totalQuotes: 0 });
+  const [stats, setStats] = useState({ totalProducts: 0, totalCategories: 0, totalBrands: 0, totalQuotes: 0, totalInquiries: 0 });
   const [recentQuotes, setRecentQuotes] = useState<QuoteRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +36,7 @@ const AdminDashboard = () => {
     { label: 'Categories', value: stats.totalCategories, icon: Layers, color: 'text-accent' },
     { label: 'Brands', value: stats.totalBrands, icon: Tag, color: 'text-primary' },
     { label: 'Quote Requests', value: stats.totalQuotes, icon: FileText, color: 'text-accent' },
+    { label: 'Inquiries', value: stats.totalInquiries, icon: MessageSquare, color: 'text-primary' },
   ];
 
   return (

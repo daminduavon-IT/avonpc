@@ -126,7 +126,13 @@ const ProductDetail = () => {
                 >
                   {isInCart ? <><CheckCircle2 className="h-5 w-5" /> View in Quote Cart</> : <><Plus className="h-5 w-5" /> Add to Quote</>}
                 </Button>
-                <Button variant="outline" size="lg" className="flex-1 h-14 text-base font-bold rounded-2xl gap-2 active:scale-95 shadow-sm">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="flex-1 h-14 text-base font-bold rounded-2xl gap-2 active:scale-95 shadow-sm disabled:opacity-50"
+                  disabled={!product.specSheetUrl}
+                  onClick={() => product.specSheetUrl && window.open(product.specSheetUrl, '_blank')}
+                >
                   <Download className="h-5 w-5" /> Technical Spec
                 </Button>
               </div>
