@@ -8,6 +8,15 @@ import { db, storage } from './firebase';
 
 // ─── Products ────────────────────────────────────────────────────────
 
+export interface ProductVariant {
+  id: string;
+  sku: string;
+  selectionLabel: string;
+  stockQty: number;
+  price: number;
+  description?: string;
+}
+
 export interface FirestoreProduct {
   id?: string;
   name: string;
@@ -27,10 +36,17 @@ export interface FirestoreProduct {
   featured: boolean;
   status: 'active' | 'inactive';
   tags: string[];
+  industryIDs?: string[];
   specSheetUrl?: string;
   seoTitle?: string;
   seoDescription?: string;
   displayOrder?: number;
+  price?: number;
+  stockQty?: string;
+  isFlashSale?: boolean;
+  selectionType?: string;
+  variants?: ProductVariant[];
+  gallery?: string[];
   createdAt?: any;
   updatedAt?: any;
 }
@@ -63,8 +79,9 @@ export const getProductById = async (id: string) => {
 };
 
 export const addProduct = async (product: Omit<FirestoreProduct, 'id'>) => {
+  const cleanData = Object.fromEntries(Object.entries(product).filter(([_, v]) => v !== undefined));
   const docRef = await addDoc(productsCol, {
-    ...product,
+    ...cleanData,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -72,7 +89,8 @@ export const addProduct = async (product: Omit<FirestoreProduct, 'id'>) => {
 };
 
 export const updateProduct = async (id: string, data: Partial<FirestoreProduct>) => {
-  await updateDoc(doc(db, 'products', id), { ...data, updatedAt: serverTimestamp() });
+  const cleanData = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined));
+  await updateDoc(doc(db, 'products', id), { ...cleanData, updatedAt: serverTimestamp() });
 };
 
 export const deleteProduct = async (id: string) => {
@@ -105,11 +123,49 @@ export const addCategory = async (cat: Omit<FirestoreCategory, 'id'>) => {
 };
 
 export const updateCategory = async (id: string, data: Partial<FirestoreCategory>) => {
-  await updateDoc(doc(db, 'categories', id), data);
+  // Firestore throws an error if we pass undefined values. Remove them first.
+  const cleanData = Object.fromEntries(
+    Object.entries(data).filter(([_, v]) => v !== undefined)
+  );
+  await updateDoc(doc(db, 'categories', id), cleanData);
 };
 
 export const deleteCategory = async (id: string) => {
   await deleteDoc(doc(db, 'categories', id));
+};
+
+// ─── Industries ────────────────────────────────────────────────────────
+
+export interface FirestoreIndustry {
+  id?: string;
+  name: string;
+  slug: string;
+  description: string;
+  image: string;
+  createdAt?: any;
+}
+
+const industriesCol = collection(db, 'industries');
+
+export const getIndustries = async () => {
+  const snapshot = await getDocs(industriesCol);
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as FirestoreIndustry));
+};
+
+export const addIndustry = async (industry: Omit<FirestoreIndustry, 'id'>) => {
+  const docRef = await addDoc(industriesCol, { ...industry, createdAt: serverTimestamp() });
+  return docRef.id;
+};
+
+export const updateIndustry = async (id: string, data: Partial<FirestoreIndustry>) => {
+  const cleanData = Object.fromEntries(
+    Object.entries(data).filter(([_, v]) => v !== undefined)
+  );
+  await updateDoc(doc(db, 'industries', id), cleanData);
+};
+
+export const deleteIndustry = async (id: string) => {
+  await deleteDoc(doc(db, 'industries', id));
 };
 
 // ─── Brands ──────────────────────────────────────────────────────────
@@ -155,8 +211,10 @@ export interface QuoteRequest {
   state: string;
   city: string;
   message: string;
-  products: { id: string; name: string; brand: string; model: string; quantity: number }[];
+  products: { id: string; name: string; brand: string; model: string; quantity: number; variantId?: string; variantLabel?: string; price?: number }[];
   status: 'New' | 'In Review' | 'Quotation Sent' | 'Follow Up' | 'Closed';
+  logisticsType?: 'Pickup' | 'Courier' | 'Avon Delivery';
+  bankSlipUrl?: string;
   userId?: string;
   internalNotes?: string;
   assignedTo?: string;
@@ -193,6 +251,42 @@ export const submitQuote = async (quoteData: Omit<QuoteRequest, 'id' | 'status'>
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+
+  // Attempt to deduct stock automatically
+  try {
+    for (const item of quoteData.products) {
+      if (!item.id) continue;
+      const productRef = doc(db, 'products', item.id);
+      const productSnap = await getDoc(productRef);
+      
+      if (productSnap.exists()) {
+        const productData = productSnap.data() as FirestoreProduct;
+        
+        // Handle Variant Stock
+        if (item.variantId && productData.variants) {
+          const updatedVariants = productData.variants.map(v => {
+            if (v.id === item.variantId && v.stockQty !== undefined) {
+              return { ...v, stockQty: Math.max(0, v.stockQty - item.quantity) };
+            }
+            return v;
+          });
+          await updateDoc(productRef, { variants: updatedVariants });
+        } 
+        // Handle Base Product Stock
+        else if (productData.stockQty !== undefined) {
+          const currentStock = parseInt(productData.stockQty as string, 10);
+          if (!isNaN(currentStock)) {
+            await updateDoc(productRef, { 
+              stockQty: Math.max(0, currentStock - item.quantity).toString()
+            });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Inventory deduction error:', error);
+  }
+
   return docRef.id;
 };
 

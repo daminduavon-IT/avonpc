@@ -1,18 +1,22 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 export interface QuoteItem {
-  id: string;
+  id: string; // We'll use id-variantId as the unique cart ID now
+  productId: string;
   name: string;
   brand: string;
   category: string;
   model: string;
   image: string;
   quantity: number;
+  variantId?: string;
+  variantLabel?: string;
+  price?: number;
 }
 
 interface QuoteContextType {
   items: QuoteItem[];
-  addItem: (item: Omit<QuoteItem, 'quantity'>) => void;
+  addItem: (item: Omit<QuoteItem, 'quantity' | 'id'> & { id?: string }) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -42,11 +46,13 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('avon-quote-cart', JSON.stringify(items));
   }, [items]);
 
-  const addItem = useCallback((item: Omit<QuoteItem, 'quantity'>) => {
+  const addItem = useCallback((item: Omit<QuoteItem, 'quantity' | 'id'> & { id?: string }) => {
     setItems(prev => {
-      const existing = prev.find(i => i.id === item.id);
-      if (existing) return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { ...item, quantity: 1 }];
+      // Generate a unique cart item ID based on productId and variantId
+      const cartItemId = item.variantId ? `${item.productId}-${item.variantId}` : item.productId;
+      const existing = prev.find(i => i.id === cartItemId);
+      if (existing) return prev.map(i => i.id === cartItemId ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...prev, { ...item, id: cartItemId, quantity: 1 }];
     });
     setIsOpen(true);
   }, []);

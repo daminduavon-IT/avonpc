@@ -2,8 +2,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
-import { getProducts, getCategories, getBrands, FirestoreProduct, FirestoreCategory, FirestoreBrand } from '@/lib/firestore-services';
+import { getProducts, getCategories, getBrands, getIndustries, FirestoreProduct, FirestoreCategory, FirestoreBrand, FirestoreIndustry } from '@/lib/firestore-services';
 import { Search, ChevronRight, FlaskConical, Grid3X3, List, Loader2, CheckCircle2, Plus } from 'lucide-react';
+import ProductCard from '@/components/ProductCard';
 
 const ProductListing = () => {
   const { category } = useParams();
@@ -11,11 +12,13 @@ const ProductListing = () => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(category || '');
   const [selectedBrand, setSelectedBrand] = useState('');
+  const [selectedIndustry, setSelectedIndustry] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
   const [products, setProducts] = useState<FirestoreProduct[]>([]);
   const [categories, setCategories] = useState<FirestoreCategory[]>([]);
   const [brands, setBrands] = useState<FirestoreBrand[]>([]);
+  const [industries, setIndustries] = useState<FirestoreIndustry[]>([]);
   const [loading, setLoading] = useState(true);
   const perPage = 8;
 
@@ -24,14 +27,16 @@ const ProductListing = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [fetchedProducts, fetchedCategories, fetchedBrands] = await Promise.all([
+        const [fetchedProducts, fetchedCategories, fetchedBrands, fetchedIndustries] = await Promise.all([
           getProducts({ status: 'active' }),
           getCategories(),
-          getBrands()
+          getBrands(),
+          getIndustries()
         ]);
         setProducts(fetchedProducts);
         setCategories(fetchedCategories);
         setBrands(fetchedBrands);
+        setIndustries(fetchedIndustries);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -45,10 +50,11 @@ const ProductListing = () => {
     return products.filter(p => {
       const matchCategory = !selectedCategory || p.category.toLowerCase().replace(/\s+/g, '-') === selectedCategory;
       const matchBrand = !selectedBrand || p.brand === selectedBrand;
+      const matchIndustry = !selectedIndustry || p.industryIDs?.includes(selectedIndustry);
       const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.shortDescription.toLowerCase().includes(search.toLowerCase());
-      return matchCategory && matchBrand && matchSearch;
+      return matchCategory && matchBrand && matchIndustry && matchSearch;
     });
-  }, [products, selectedCategory, selectedBrand, search]);
+  }, [products, selectedCategory, selectedBrand, selectedIndustry, search]);
 
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
   const totalPages = Math.ceil(filtered.length / perPage);
@@ -143,6 +149,28 @@ const ProductListing = () => {
                 ))}
               </div>
             </div>
+
+            {/* Industry filter */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Industries</h3>
+              <div className="space-y-1">
+                <button
+                  onClick={() => { setSelectedIndustry(''); setPage(1); }}
+                  className={`block w-full text-left px-3 py-2 text-sm rounded-md btn-transition ${!selectedIndustry ? 'bg-primary/5 text-primary font-medium' : 'text-muted-foreground hover:bg-muted'}`}
+                >
+                  All Industries
+                </button>
+                {industries.map(i => (
+                  <button
+                    key={i.id}
+                    onClick={() => { setSelectedIndustry(i.id!); setPage(1); }}
+                    className={`block w-full text-left px-3 py-2 text-sm rounded-md btn-transition ${selectedIndustry === i.id ? 'bg-primary/5 text-primary font-medium' : 'text-muted-foreground hover:bg-muted'}`}
+                  >
+                    {i.name}
+                  </button>
+                ))}
+              </div>
+            </div>
           </aside>
 
           {/* Product grid */}
@@ -164,92 +192,27 @@ const ProductListing = () => {
                 <FlaskConical className="h-16 w-16 text-muted-foreground/20 mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-foreground mb-2">No Products Found</h3>
                 <p className="text-muted-foreground max-w-xs mx-auto">Try adjusting your filters or search terms to find what you're looking for.</p>
-                <Button variant="outline" className="mt-6" onClick={() => { setSelectedCategory(''); setSelectedBrand(''); setSearch(''); setPage(1); }}>Clear All Filters</Button>
+                <Button variant="outline" className="mt-6" onClick={() => { setSelectedCategory(''); setSelectedBrand(''); setSelectedIndustry(''); setSearch(''); setPage(1); }}>Clear All Filters</Button>
               </div>
             ) : view === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {paginated.map(product => {
-                  const inCart = isInCart(product.id);
+                  const industryNames = (product.industryIDs || [])
+                    .map(id => industries.find(i => i.id === id)?.name)
+                    .filter(Boolean) as string[];
                   return (
-                    <div key={product.id} className="bg-card rounded-2xl border overflow-hidden card-hover group flex flex-col h-full">
-                      <Link to={`/product/${product.slug}`} className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center shrink-0">
-                        {product.image ? (
-                          <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                        ) : (
-                          <FlaskConical className="h-14 w-14 text-primary/20 transition-transform duration-500 group-hover:scale-110" />
-                        )}
-                        {product.featured && (
-                          <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Featured</span>
-                        )}
-                      </Link>
-                      <div className="p-5 flex flex-col flex-1">
-                        <div className="mb-auto">
-                          <p className="text-xs text-accent font-bold mb-1 uppercase tracking-tight">{product.brand}</p>
-                          <Link to={`/product/${product.slug}`}>
-                            <h3 className="font-bold text-foreground mb-2 line-clamp-2 hover:text-primary transition-colors">{product.name}</h3>
-                          </Link>
-                          <p className="text-xs text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{product.shortDescription}</p>
-                        </div>
-                        <div className="flex gap-2 pt-2 border-t border-border/50">
-                          <Link to={`/product/${product.slug}`} className="flex-1">
-                            <Button variant="outline" size="sm" className="w-full text-xs font-semibold h-9 rounded-lg">Details</Button>
-                          </Link>
-                          <Button
-                            variant={inCart ? 'outline' : 'accent'}
-                            size="sm"
-                            className={`flex-1 text-xs font-semibold h-9 rounded-lg flex items-center justify-center gap-1.5 transition-all ${inCart ? 'bg-primary/5 border-primary text-primary hover:bg-primary/10' : ''}`}
-                            onClick={() => !inCart && addItem({ id: product.id!, name: product.name, brand: product.brand, category: product.category, model: product.model, image: product.image })}
-                          >
-                            {inCart ? <><CheckCircle2 className="h-3.5 w-3.5" /> In Cart</> : <><Plus className="h-3.5 w-3.5" /> Quote</>}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                    <ProductCard key={product.id} product={product} view="grid" industryNames={industryNames} />
                   );
                 })}
               </div>
             ) : (
               <div className="space-y-4">
                 {paginated.map(product => {
-                  const inCart = isInCart(product.id);
+                  const industryNames = (product.industryIDs || [])
+                    .map(id => industries.find(i => i.id === id)?.name)
+                    .filter(Boolean) as string[];
                   return (
-                    <div key={product.id} className="bg-card rounded-2xl border p-4 flex flex-col sm:flex-row gap-5 card-hover group">
-                      <Link to={`/product/${product.slug}`} className="w-full sm:w-32 h-32 bg-muted rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden relative">
-                        {product.image ? (
-                          <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                        ) : (
-                          <FlaskConical className="h-10 w-10 text-primary/20 transition-transform duration-500 group-hover:scale-110" />
-                        )}
-                      </Link>
-                      <div className="flex-1 min-w-0 py-1">
-                        <div className="flex flex-col h-full justify-between">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[10px] font-bold text-accent uppercase tracking-wider">{product.brand}</span>
-                              {product.featured && <span className="h-1 w-1 rounded-full bg-border" />}
-                              {product.featured && <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Featured</span>}
-                            </div>
-                            <Link to={`/product/${product.slug}`}>
-                              <h3 className="font-bold text-foreground mb-1 hover:text-primary transition-colors">{product.name}</h3>
-                            </Link>
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4 max-w-2xl">{product.shortDescription}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Link to={`/product/${product.slug}`}>
-                              <Button variant="outline" size="sm" className="text-xs font-semibold h-9 rounded-lg px-6">View Details</Button>
-                            </Link>
-                            <Button
-                              variant={inCart ? 'outline' : 'accent'}
-                              size="sm"
-                              className={`text-xs font-semibold h-9 rounded-lg px-6 flex items-center gap-1.5 transition-all ${inCart ? 'bg-primary/5 border-primary text-primary hover:bg-primary/10' : ''}`}
-                              onClick={() => !inCart && addItem({ id: product.id!, name: product.name, brand: product.brand, category: product.category, model: product.model, image: product.image })}
-                            >
-                              {inCart ? <><CheckCircle2 className="h-3.5 w-3.5" /> In Cart</> : <><Plus className="h-3.5 w-3.5" /> Add to Quote</>}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <ProductCard key={product.id} product={product} view="list" industryNames={industryNames} />
                   );
                 })}
               </div>

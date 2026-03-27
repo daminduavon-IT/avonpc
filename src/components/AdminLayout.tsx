@@ -12,6 +12,7 @@ const sidebarItems = [
   { label: 'Products', path: '/admin/products', icon: Package },
   { label: 'Categories', path: '/admin/categories', icon: Layers },
   { label: 'Brands', path: '/admin/brands', icon: Tag },
+  { label: 'Industries', path: '/admin/industries', icon: Layers },
   { label: 'Quote Requests', path: '/admin/quotes', icon: FileText },
   { label: 'Customers', path: '/admin/customers', icon: Users },
   { label: 'Media', path: '/admin/media', icon: Image },

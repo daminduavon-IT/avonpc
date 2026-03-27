@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
 import { industries } from '@/data/catalog';
-import { getProducts, getCategories, getBrands, FirestoreProduct, FirestoreCategory, FirestoreBrand } from '@/lib/firestore-services';
+import { getProducts, getCategories, getBrands, getIndustries, FirestoreProduct, FirestoreCategory, FirestoreBrand, FirestoreIndustry } from '@/lib/firestore-services';
 import { useSettings } from '@/context/SettingsContext';
 import { Shield, Truck, Award, HeadphonesIcon, ArrowRight, FlaskConical, FileText, Loader2, CheckCircle2, Plus, Phone, Mail, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -22,9 +22,10 @@ const Index = () => {
   const [featuredProducts, setFeaturedProducts] = useState<FirestoreProduct[]>([]);
   const [categories, setCategories] = useState<FirestoreCategory[]>([]);
   const [brands, setBrands] = useState<FirestoreBrand[]>([]);
+  const [dbIndustries, setDbIndustries] = useState<FirestoreIndustry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isInCart = (id?: string) => !!id && items.some(i => i.id === id);
+  const isInCart = (id?: string) => !!id && items.some(i => i.productId === id);
 
   const carouselSlides = settings?.heroCarousel && settings.heroCarousel.length >= 4
     ? settings.heroCarousel
@@ -55,14 +56,16 @@ const Index = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [fetchedProducts, fetchedCategories, fetchedBrands] = await Promise.all([
+        const [fetchedProducts, fetchedCategories, fetchedBrands, fetchedInds] = await Promise.all([
           getProducts({ featured: true, status: 'active' }),
           getCategories(),
-          getBrands()
+          getBrands(),
+          getIndustries()
         ]);
         setFeaturedProducts(fetchedProducts);
         setCategories(fetchedCategories);
         setBrands(fetchedBrands);
+        setDbIndustries(fetchedInds);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -201,6 +204,18 @@ const Index = () => {
                       <Link to={`/product/${product.slug}`}>
                         <h3 className="font-bold text-foreground mb-1 line-clamp-2 hover:text-primary transition-colors">{product.name}</h3>
                       </Link>
+                      {product.industryIDs && product.industryIDs.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {product.industryIDs.map(id => {
+                            const ind = dbIndustries.find(i => i.id === id);
+                            return ind ? (
+                              <span key={id} className="text-[9px] font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                {ind.name}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{product.shortDescription}</p>
                     </div>
                     <div className="flex gap-2 pt-2 border-t border-border/50">
@@ -212,8 +227,8 @@ const Index = () => {
                         size="sm"
                         className={`flex-1 text-xs font-semibold h-9 rounded-lg flex items-center justify-center gap-1.5 transition-all ${inCart ? 'bg-primary/5 border-primary text-primary hover:bg-primary/10' : ''}`}
                         onClick={() => !inCart && addItem({
-                          id: product.id!, name: product.name, brand: product.brand,
-                          category: product.category, model: product.model, image: product.image
+                          productId: product.id!, name: product.name, brand: product.brand,
+                          category: product.category, model: product.model, image: product.image, price: product.price
                         })}
                       >
                         {inCart ? <><CheckCircle2 className="h-3.5 w-3.5" /> In Cart</> : <><Plus className="h-3.5 w-3.5" /> Quote</>}
