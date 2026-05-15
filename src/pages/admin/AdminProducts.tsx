@@ -27,7 +27,7 @@ const AdminProducts = () => {
     shortDescription: '', fullDescription: '', specifications: [],
     applications: [], features: [], image: '', images: [],
     featured: false, status: 'active' as const, tags: [], industryIDs: [], specSheetUrl: '',
-    isFlashSale: false, regularPrice: undefined as number | undefined, flashSalePrice: undefined as number | undefined, flashSaleStock: undefined as number | undefined,
+    isFlashSale: false, regularPrice: undefined as number | undefined, flashSalePrice: undefined as number | undefined, flashSaleStock: undefined as number | undefined, flashSaleInitialStock: undefined as number | undefined,
     variants: [] as ProductVariant[],
   };
 
@@ -268,17 +268,31 @@ const AdminProducts = () => {
                           required={formData.isFlashSale}
                         />
                       </div>
-                      <div className="space-y-2 col-span-1 sm:col-span-2">
-                        <Label htmlFor="flashSaleStock" className="text-amber-600 font-bold">Stock Count</Label>
-                        <Input
-                          id="flashSaleStock"
-                          type="number"
-                          min="0"
-                          value={formData.flashSaleStock || ''}
-                          onChange={e => setFormData({ ...formData, flashSaleStock: parseInt(e.target.value) || undefined })}
-                          placeholder="e.g. 50 (units available)"
-                          className="border-amber-200 focus-visible:ring-amber-500"
-                        />
+                      <div className="grid grid-cols-2 gap-4 col-span-1 sm:col-span-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="flashSaleInitialStock" className="text-amber-600 font-bold">Total Stock (Max)</Label>
+                          <Input
+                            id="flashSaleInitialStock"
+                            type="number"
+                            min="0"
+                            value={formData.flashSaleInitialStock || ''}
+                            onChange={e => setFormData({ ...formData, flashSaleInitialStock: parseInt(e.target.value) || undefined })}
+                            placeholder="e.g. 100"
+                            className="border-amber-200 focus-visible:ring-amber-500"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="flashSaleStock" className="text-amber-600 font-bold">Remaining Stock</Label>
+                          <Input
+                            id="flashSaleStock"
+                            type="number"
+                            min="0"
+                            value={formData.flashSaleStock || ''}
+                            onChange={e => setFormData({ ...formData, flashSaleStock: parseInt(e.target.value) || undefined })}
+                            placeholder="e.g. 42"
+                            className="border-amber-200 focus-visible:ring-amber-500"
+                          />
+                        </div>
                       </div>
                     </>
                   )}

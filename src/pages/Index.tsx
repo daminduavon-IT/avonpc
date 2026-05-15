@@ -11,7 +11,7 @@ import heroImgPlaceholder from '@/assets/hero-lab.jpg';
 
 const features = [
   { icon: Shield, title: 'Certified Quality', description: 'All products meet international quality standards and certifications.' },
-  { icon: Truck, title: 'Pan-India Delivery', description: 'Fast and reliable delivery to laboratories across India.' },
+  { icon: Truck, title: 'Island-Wide Delivery', description: 'Fast and reliable delivery to laboratories across Sri Lanka.' },
   { icon: Award, title: '30+ Years Experience', description: 'Trusted by thousands of labs since 1992.' },
   { icon: HeadphonesIcon, title: 'Expert Support', description: 'Dedicated technical support team for all your needs.' },
 ];
@@ -157,9 +157,9 @@ const Index = () => {
                 to={`/products/${cat.slug}`}
                 className="group flex flex-col items-center"
               >
-                <div className="w-full aspect-square bg-[#f8f9fa] rounded-3xl border border-gray-100 p-8 mb-6 transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-primary/5 group-hover:-translate-y-2 group-hover:border-primary/20 relative overflow-hidden flex items-center justify-center">
+                <div className="w-full aspect-square bg-[#f8f9fa] rounded-3xl border border-gray-100 mb-6 transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-primary/5 group-hover:-translate-y-2 group-hover:border-primary/20 relative overflow-hidden flex items-center justify-center">
                   {cat.image ? (
-                    <img src={cat.image} alt={cat.name} className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110" />
+                    <img src={cat.image} alt={cat.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   ) : (
                     <FlaskConical className="h-16 w-16 text-primary/20 transition-transform duration-500 group-hover:scale-110" />
                   )}
@@ -227,11 +227,13 @@ const Index = () => {
                       <div className="mb-4">
                         <div className="mb-2 space-y-1">
                           <div className="flex justify-between text-[10px] font-black text-amber-500 uppercase tracking-wide">
-                            <span>{product.flashSaleStock !== undefined ? `${product.flashSaleStock} left` : 'Limited Stock'}</span>
-                            <span className="animate-pulse flex items-center gap-1">⚡ Flash Sale</span>
+                            <span>{product.flashSaleStock !== undefined ? `${product.flashSaleStock} left` : '⚡ Flash Sale'}</span>
+                            {product.flashSaleStock !== undefined && product.flashSaleInitialStock && (
+                              <span className="text-amber-400">{product.flashSaleInitialStock - product.flashSaleStock} sold</span>
+                            )}
                           </div>
-                          <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" style={{ width: product.flashSaleStock !== undefined ? `${Math.min(100, product.flashSaleStock)}%` : '85%' }} />
+                          <div className="h-1.5 w-full bg-amber-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" style={{ width: (product.flashSaleStock !== undefined && product.flashSaleInitialStock) ? `${Math.min(100, Math.round((product.flashSaleStock / product.flashSaleInitialStock) * 100))}%` : '70%' }} />
                           </div>
                         </div>
                         <div className="mt-3">
@@ -357,9 +359,9 @@ const Index = () => {
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-4">Get In Touch</h2>
               <div className="space-y-3 text-sm text-muted-foreground">
-                <p>📍 {settings?.locations?.[0]?.address || '123 Industrial Area, Ahmedabad, Gujarat 380015, India'}</p>
-                <p>📞 {settings?.phone || '+91 79 2583 1234'}</p>
-                <p>✉️ {settings?.email || 'info@avonpc.com'}</p>
+                <p>📍 {settings?.locations?.[0]?.address || 'Avon Pharmo Chem (Pvt) Ltd, Colombo, Sri Lanka'}</p>
+                <p>📞 {settings?.phone || '+94 11 234 5678'}</p>
+                <p>✉️ {settings?.email || 'sales@avonpc.com'}</p>
               </div>
               <Link to="/contact" className="mt-4 inline-block">
                 <Button variant="outline">Contact Us <ArrowRight className="h-4 w-4" /></Button>

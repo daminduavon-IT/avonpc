@@ -68,7 +68,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-foreground">Phone</h4>
-                      <p className="text-sm text-muted-foreground">{settings?.phone || '+91 79 2583 1234'}</p>
+                      <p className="text-sm text-muted-foreground">{settings?.phone || '+94 11 234 5678'}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4 bg-card border rounded-lg p-4">
@@ -77,7 +77,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-foreground">Email</h4>
-                      <p className="text-sm text-muted-foreground">{settings?.email || 'info@avonpc.com'}</p>
+                      <p className="text-sm text-muted-foreground">{settings?.email || 'sales@avonpc.com'}</p>
                     </div>
                   </div>
                 </div>

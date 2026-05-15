@@ -10,8 +10,15 @@ const ProductListing = () => {
   const location = useLocation();
   const isFlashSalePage = location.pathname === '/flash-sale';
   const { addItem, items } = useQuote();
-  const [search, setSearch] = useState('');
+  const urlSearch = new URLSearchParams(location.search).get('search') || '';
+  const [search, setSearch] = useState(urlSearch);
   const [selectedCategory, setSelectedCategory] = useState(category || '');
+
+  useEffect(() => {
+    const s = new URLSearchParams(location.search).get('search') || '';
+    setSearch(s);
+    setPage(1);
+  }, [location.search]);
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -247,11 +254,13 @@ const ProductListing = () => {
                           <div className="mb-4">
                             <div className="mb-2 space-y-1">
                               <div className="flex justify-between text-[10px] font-black text-amber-500 uppercase tracking-wide">
-                                <span>{product.flashSaleStock !== undefined ? `${product.flashSaleStock} left in stock` : 'Limited Stock'}</span>
-                                <span className="animate-pulse flex items-center gap-1">⚡ Flash Sale</span>
+                                <span>{product.flashSaleStock !== undefined ? `${product.flashSaleStock} left` : '⚡ Flash Sale'}</span>
+                                {product.flashSaleStock !== undefined && product.flashSaleInitialStock && (
+                                  <span className="text-amber-400">{product.flashSaleInitialStock - product.flashSaleStock} sold</span>
+                                )}
                               </div>
-                              <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" style={{ width: product.flashSaleStock !== undefined ? `${Math.min(100, product.flashSaleStock)}%` : '85%' }} />
+                              <div className="h-1.5 w-full bg-amber-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" style={{ width: (product.flashSaleStock !== undefined && product.flashSaleInitialStock) ? `${Math.min(100, Math.round((product.flashSaleStock / product.flashSaleInitialStock) * 100))}%` : '70%' }} />
                               </div>
                             </div>
                             <div className="mt-3">
@@ -332,7 +341,7 @@ const ProductListing = () => {
                               <span className="animate-pulse flex items-center gap-1">⚡ Flash Sale</span>
                             </div>
                             <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                              <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" style={{ width: product.flashSaleStock !== undefined ? `${Math.min(100, product.flashSaleStock)}%` : '85%' }} />
+                              <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" style={{ width: (product.flashSaleStock !== undefined && product.flashSaleInitialStock) ? `${Math.min(100, Math.round((product.flashSaleStock / product.flashSaleInitialStock) * 100))}%` : '85%' }} />
                             </div>
                           </div>
                           <div className="mt-3">

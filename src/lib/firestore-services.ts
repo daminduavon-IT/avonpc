@@ -363,14 +363,14 @@ export interface WebsiteSettings {
 export const getSettings = async (): Promise<WebsiteSettings | null> => {
   const defaults: WebsiteSettings = {
     companyName: 'Avon Pharmo Chem (Pvt) Ltd',
-    email: 'info@avonpc.com',
-    phone: '+91 79 2583 1234',
+    email: 'sales@avonpc.com',
+    phone: '+94 11 234 5678',
     locations: [
       {
         name: 'Main Office',
-        address: '123 Industrial Area, Ahmedabad, Gujarat 380015, India',
-        phone: '+91 79 2583 1234',
-        email: 'info@avonpc.com',
+        address: 'Avon Pharmo Chem (Pvt) Ltd, Colombo, Sri Lanka',
+        phone: '+94 11 234 5678',
+        email: 'sales@avonpc.com',
         mapLink: ''
       }
     ],

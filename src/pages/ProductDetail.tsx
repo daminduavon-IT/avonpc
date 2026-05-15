@@ -222,25 +222,34 @@ const ProductDetail = () => {
             {/* Price Block */}
             {isFlashActive ? (
               <div className="bg-amber-50 border-2 border-amber-400/50 rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-black uppercase tracking-widest text-amber-600">⚡ Flash Sale Price</span>
-                  {product.flashSaleStock !== undefined && (
-                    <span className="text-xs font-bold text-amber-600 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg">
-                      {product.flashSaleStock} left in stock
-                    </span>
-                  )}
-                </div>
-                {product.flashSaleStock !== undefined && (
-                  <div className="h-1.5 w-full bg-amber-100 rounded-full mb-4 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all"
-                      style={{ width: `${Math.min(100, (product.flashSaleStock / 100) * 100)}%` }}
-                    />
-                  </div>
-                )}
-                <p className="text-4xl font-black text-amber-600">
+                <span className="text-xs font-black uppercase tracking-widest text-amber-600">⚡ Flash Sale Price</span>
+                <p className="text-4xl font-black text-amber-600 mt-2 mb-4">
                   Rs {displayFlashPrice?.toLocaleString()}
                 </p>
+                {product.flashSaleStock !== undefined && (
+                  <div className="mt-1">
+                    <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+                      <span className="text-amber-700">
+                        {product.flashSaleStock} left in stock
+                      </span>
+                      {product.flashSaleInitialStock && (
+                        <span className="text-amber-500">
+                          {product.flashSaleInitialStock - product.flashSaleStock} sold
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-2.5 w-full bg-amber-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all"
+                        style={{
+                          width: product.flashSaleInitialStock
+                            ? `${Math.min(100, Math.round((product.flashSaleStock / product.flashSaleInitialStock) * 100))}%`
+                            : '60%'
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ) : displayPrice ? (
               <div className="bg-muted/40 border rounded-2xl p-5">
