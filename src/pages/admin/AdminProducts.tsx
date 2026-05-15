@@ -224,36 +224,37 @@ const AdminProducts = () => {
 
               <div className={`space-y-4 col-span-2 border rounded-lg p-5 transition-all duration-500 ${formData.isFlashSale ? 'bg-amber-50/50 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'bg-muted/10'}`}>
                 <h3 className={`font-bold text-sm flex items-center gap-2 ${formData.isFlashSale ? 'text-amber-600' : 'text-foreground'}`}>
-                  {formData.isFlashSale && '⚡'} Premium Pricing & Flash Sale
+                  {formData.isFlashSale && '⚡'} Pricing & Flash Sale
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
-                  <div className="space-y-2">
-                    <Label htmlFor="regularPrice" className={formData.isFlashSale ? 'text-amber-800' : ''}>Standard Price (Optional)</Label>
-                    <Input
-                      id="regularPrice"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.regularPrice || ''}
-                      onChange={e => setFormData({ ...formData, regularPrice: parseFloat(e.target.value) || undefined })}
-                      placeholder="e.g. 1500"
-                      className={formData.isFlashSale ? 'border-amber-200 focus-visible:ring-amber-500' : ''}
-                    />
-                  </div>
+                  {!formData.isFlashSale && (
+                    <div className="space-y-2">
+                      <Label htmlFor="regularPrice">Regular Price (Optional)</Label>
+                      <Input
+                        id="regularPrice"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.regularPrice || ''}
+                        onChange={e => setFormData({ ...formData, regularPrice: parseFloat(e.target.value) || undefined })}
+                        placeholder="e.g. 1500"
+                      />
+                    </div>
+                  )}
                   <div className="space-y-2 pb-2">
                     <label className={`flex items-center gap-2 text-sm font-bold cursor-pointer transition-colors ${formData.isFlashSale ? 'text-amber-600' : ''}`}>
                       <input
                         type="checkbox"
                         checked={formData.isFlashSale || false}
-                        onChange={e => setFormData({ ...formData, isFlashSale: e.target.checked })}
+                        onChange={e => setFormData({ ...formData, isFlashSale: e.target.checked, regularPrice: undefined })}
                         className={`rounded h-4 w-4 ${formData.isFlashSale ? 'border-amber-500 text-amber-500 focus:ring-amber-500' : 'border-primary text-primary focus:ring-primary'}`}
                       />
-                      Enable Premium Flash Sale
+                      Enable Flash Sale
                     </label>
                   </div>
                   {formData.isFlashSale && (
                     <div className="space-y-2 col-span-1 sm:col-span-2 animate-fade-in-up">
-                      <Label htmlFor="flashSalePrice" className="text-amber-600 font-bold flex items-center gap-1 text-base">Flash Sale Price</Label>
+                      <Label htmlFor="flashSalePrice" className="text-amber-600 font-bold text-base">⚡ Flash Sale Price</Label>
                       <Input
                         id="flashSalePrice"
                         type="number"
@@ -363,17 +364,21 @@ const AdminProducts = () => {
                         <Label className="text-xs">Stock (optional)</Label>
                         <Input type="number" placeholder="Qty" value={v.stock ?? ''} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, stock: parseInt(e.target.value) || undefined } : x) }))} />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Regular Price (Rs)</Label>
-                        <Input type="number" placeholder="0.00" value={v.regularPrice ?? ''} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, regularPrice: parseFloat(e.target.value) || undefined } : x) }))} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Flash Sale Price (Rs)</Label>
-                        <Input type="number" placeholder="0.00" value={v.flashSalePrice ?? ''} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, flashSalePrice: parseFloat(e.target.value) || undefined } : x) }))} />
-                      </div>
+                      {!v.isFlashSale && (
+                        <div className="space-y-1">
+                          <Label className="text-xs">Regular Price (Rs)</Label>
+                          <Input type="number" placeholder="0.00" value={v.regularPrice ?? ''} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, regularPrice: parseFloat(e.target.value) || undefined } : x) }))} />
+                        </div>
+                      )}
+                      {v.isFlashSale && (
+                        <div className="space-y-1 col-span-2">
+                          <Label className="text-xs text-amber-600 font-bold">⚡ Flash Sale Price (Rs)</Label>
+                          <Input type="number" placeholder="0.00" value={v.flashSalePrice ?? ''} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, flashSalePrice: parseFloat(e.target.value) || undefined } : x) }))} className="border-amber-400 focus-visible:ring-amber-500" />
+                        </div>
+                      )}
                     </div>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input type="checkbox" checked={v.isFlashSale ?? false} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, isFlashSale: e.target.checked } : x) }))} className="rounded h-4 w-4 border-primary text-primary focus:ring-primary" />
+                      <input type="checkbox" checked={v.isFlashSale ?? false} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, isFlashSale: e.target.checked, regularPrice: undefined } : x) }))} className="rounded h-4 w-4 border-primary text-primary focus:ring-primary" />
                       Enable Flash Sale for this variant
                     </label>
                   </div>

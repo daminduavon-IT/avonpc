@@ -232,9 +232,6 @@ const ProductDetail = () => {
                 <p className="text-4xl font-black text-amber-600">
                   Rs {displayFlashPrice?.toLocaleString()}
                 </p>
-                {displayPrice && (
-                  <p className="text-sm text-muted-foreground line-through mt-1">Was Rs {displayPrice.toLocaleString()}</p>
-                )}
               </div>
             ) : displayPrice ? (
               <div className="bg-muted/40 border rounded-2xl p-5">

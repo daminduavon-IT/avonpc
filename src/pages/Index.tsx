@@ -234,7 +234,7 @@ const Index = () => {
                             <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full w-[85%]" />
                           </div>
                         </div>
-                        <div className="flex items-baseline gap-2 mt-3">
+                        <div className="mt-3">
                           {product.flashSalePrice && <span className="gold-gradient-text text-2xl tracking-tighter">Rs {product.flashSalePrice.toLocaleString()}</span>}
                         </div>
                       </div>
