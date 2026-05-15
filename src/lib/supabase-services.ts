@@ -32,6 +32,7 @@ export interface FirestoreProduct {
   images: string[];
   isFlashSale?: boolean;
   flashSalePrice?: number;
+  flashSaleStock?: number;
   regularPrice?: number;
   featured: boolean;
   status: 'active' | 'inactive';

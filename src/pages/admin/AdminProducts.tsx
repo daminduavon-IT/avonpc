@@ -27,7 +27,7 @@ const AdminProducts = () => {
     shortDescription: '', fullDescription: '', specifications: [],
     applications: [], features: [], image: '', images: [],
     featured: false, status: 'active' as const, tags: [], industryIDs: [], specSheetUrl: '',
-    isFlashSale: false, regularPrice: undefined as number | undefined, flashSalePrice: undefined as number | undefined,
+    isFlashSale: false, regularPrice: undefined as number | undefined, flashSalePrice: undefined as number | undefined, flashSaleStock: undefined as number | undefined,
     variants: [] as ProductVariant[],
   };
 
@@ -253,20 +253,34 @@ const AdminProducts = () => {
                     </label>
                   </div>
                   {formData.isFlashSale && (
-                    <div className="space-y-2 col-span-1 sm:col-span-2 animate-fade-in-up">
-                      <Label htmlFor="flashSalePrice" className="text-amber-600 font-bold text-base">⚡ Flash Sale Price</Label>
-                      <Input
-                        id="flashSalePrice"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.flashSalePrice || ''}
-                        onChange={e => setFormData({ ...formData, flashSalePrice: parseFloat(e.target.value) || undefined })}
-                        placeholder="e.g. 999"
-                        className="border-amber-400 focus-visible:ring-amber-500 bg-white h-12 text-lg font-bold shadow-inner"
-                        required={formData.isFlashSale}
-                      />
-                    </div>
+                    <>
+                      <div className="space-y-2 col-span-1 sm:col-span-2 animate-fade-in-up">
+                        <Label htmlFor="flashSalePrice" className="text-amber-600 font-bold text-base">⚡ Flash Sale Price</Label>
+                        <Input
+                          id="flashSalePrice"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.flashSalePrice || ''}
+                          onChange={e => setFormData({ ...formData, flashSalePrice: parseFloat(e.target.value) || undefined })}
+                          placeholder="e.g. 999"
+                          className="border-amber-400 focus-visible:ring-amber-500 bg-white h-12 text-lg font-bold shadow-inner"
+                          required={formData.isFlashSale}
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-1 sm:col-span-2">
+                        <Label htmlFor="flashSaleStock" className="text-amber-600 font-bold">Stock Count</Label>
+                        <Input
+                          id="flashSaleStock"
+                          type="number"
+                          min="0"
+                          value={formData.flashSaleStock || ''}
+                          onChange={e => setFormData({ ...formData, flashSaleStock: parseInt(e.target.value) || undefined })}
+                          placeholder="e.g. 50 (units available)"
+                          className="border-amber-200 focus-visible:ring-amber-500"
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
               </div>

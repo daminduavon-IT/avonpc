@@ -224,11 +224,20 @@ const ProductDetail = () => {
               <div className="bg-amber-50 border-2 border-amber-400/50 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-black uppercase tracking-widest text-amber-600">⚡ Flash Sale Price</span>
-                  <span className="text-xs font-bold text-amber-500 animate-pulse">Limited Stock</span>
+                  {product.flashSaleStock !== undefined && (
+                    <span className="text-xs font-bold text-amber-600 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg">
+                      {product.flashSaleStock} left in stock
+                    </span>
+                  )}
                 </div>
-                <div className="h-1.5 w-full bg-amber-100 rounded-full mb-4">
-                  <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full w-[80%]" />
-                </div>
+                {product.flashSaleStock !== undefined && (
+                  <div className="h-1.5 w-full bg-amber-100 rounded-full mb-4 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (product.flashSaleStock / 100) * 100)}%` }}
+                    />
+                  </div>
+                )}
                 <p className="text-4xl font-black text-amber-600">
                   Rs {displayFlashPrice?.toLocaleString()}
                 </p>

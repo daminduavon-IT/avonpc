@@ -247,14 +247,14 @@ const ProductListing = () => {
                           <div className="mb-4">
                             <div className="mb-2 space-y-1">
                               <div className="flex justify-between text-[10px] font-black text-amber-500 uppercase tracking-wide">
-                                <span>Limited Stock</span>
-                                <span className="animate-pulse flex items-center gap-1">⚡ Exclusive Offer</span>
+                                <span>{product.flashSaleStock !== undefined ? `${product.flashSaleStock} left in stock` : 'Limited Stock'}</span>
+                                <span className="animate-pulse flex items-center gap-1">⚡ Flash Sale</span>
                               </div>
                               <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full w-[85%]" />
+                                <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" style={{ width: product.flashSaleStock !== undefined ? `${Math.min(100, product.flashSaleStock)}%` : '85%' }} />
                               </div>
                             </div>
-                            <div className="flex items-baseline gap-2 mt-3">
+                            <div className="mt-3">
                               {product.flashSalePrice && <span className="gold-gradient-text text-xl tracking-tighter">Rs {product.flashSalePrice.toLocaleString()}</span>}
                             </div>
                           </div>
@@ -328,14 +328,14 @@ const ProductListing = () => {
                         <div className="mb-4 max-w-xs">
                           <div className="mb-2 space-y-1">
                             <div className="flex justify-between text-[10px] font-black text-amber-500 uppercase tracking-wide">
-                              <span>Limited Stock</span>
-                              <span className="animate-pulse flex items-center gap-1">⚡ Exclusive Offer</span>
+                              <span>{product.flashSaleStock !== undefined ? `${product.flashSaleStock} left in stock` : 'Limited Stock'}</span>
+                              <span className="animate-pulse flex items-center gap-1">⚡ Flash Sale</span>
                             </div>
                             <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                              <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full w-[85%]" />
+                              <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" style={{ width: product.flashSaleStock !== undefined ? `${Math.min(100, product.flashSaleStock)}%` : '85%' }} />
                             </div>
                           </div>
-                          <div className="flex items-baseline gap-2 mt-3">
+                          <div className="mt-3">
                             {product.flashSalePrice && <span className="gold-gradient-text text-xl tracking-tighter">Rs {product.flashSalePrice.toLocaleString()}</span>}
                           </div>
                         </div>
