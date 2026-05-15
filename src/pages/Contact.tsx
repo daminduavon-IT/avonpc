@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Phone, Mail, MapPin, Send, Globe } from 'lucide-react';
 import { toast } from 'sonner';
-import { submitInquiry } from '@/lib/firestore-services';
+import { submitInquiry } from '@/lib/supabase-services';
 import { useSettings } from '@/context/SettingsContext';
 
 const Contact = () => {

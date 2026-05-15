@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 export interface QuoteItem {
-  id: string;
-  name: string;
+  id: string;          // productId or productId-variantId
+  name: string;        // "Product Name" or "Product Name — Variant Name"
   brand: string;
   category: string;
   model: string;
   image: string;
   quantity: number;
+  isFlashSale?: boolean;
+  variantName?: string; // just the variant label e.g. "24 Pack"
 }
 
 interface QuoteContextType {

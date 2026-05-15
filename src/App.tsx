@@ -30,7 +30,10 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminCategories from "./pages/admin/AdminCategories";
+import AdminIndustries from "./pages/admin/AdminIndustries";
 import AdminBrands from "./pages/admin/AdminBrands";
+
+
 import AdminQuotes from "./pages/admin/AdminQuotes";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminMedia from "./pages/admin/AdminMedia";
@@ -57,13 +60,14 @@ const App = () => (
       <AuthProvider>
         <SettingsProvider>
           <QuoteProvider>
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <Routes>
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
                   <Route path="products" element={<AdminProducts />} />
                   <Route path="categories" element={<AdminCategories />} />
+                  <Route path="industries" element={<AdminIndustries />} />
                   <Route path="brands" element={<AdminBrands />} />
                   <Route path="quotes" element={<AdminQuotes />} />
                   <Route path="customers" element={<AdminCustomers />} />
@@ -79,6 +83,7 @@ const App = () => (
                 <Route path="/about" element={<WebsiteLayout><About /></WebsiteLayout>} />
                 <Route path="/products" element={<WebsiteLayout><ProductListing /></WebsiteLayout>} />
                 <Route path="/products/:category" element={<WebsiteLayout><ProductListing /></WebsiteLayout>} />
+                <Route path="/flash-sale" element={<WebsiteLayout><ProductListing /></WebsiteLayout>} />
                 <Route path="/product/:slug" element={<WebsiteLayout><ProductDetail /></WebsiteLayout>} />
                 <Route path="/brands" element={<WebsiteLayout><Brands /></WebsiteLayout>} />
                 <Route path="/industries" element={<WebsiteLayout><Industries /></WebsiteLayout>} />

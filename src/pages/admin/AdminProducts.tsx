@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Edit, Trash2, Eye, EyeOff, Loader2, ImagePlus, FlaskConical, FileText } from 'lucide-react';
-import { getProducts, getCategories, getBrands, deleteProduct, updateProduct, addProduct, FirestoreProduct, FirestoreCategory, FirestoreBrand } from '@/lib/firestore-services';
+import { Search, Plus, Edit, Trash2, Eye, EyeOff, Loader2, ImagePlus, FlaskConical, FileText, PackagePlus, X } from 'lucide-react';
+import { getProducts, getCategories, getBrands, getIndustries, deleteProduct, updateProduct, addProduct, FirestoreProduct, FirestoreCategory, FirestoreBrand, FirestoreIndustry, ProductVariant, uploadToSupabase } from '@/lib/supabase-services';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { uploadToCloudinary } from '@/lib/cloudinary-services';
 import { toast } from 'sonner';
 
 const AdminProducts = () => {
   const [search, setSearch] = useState('');
-  const [firebaseProducts, setFirebaseProducts] = useState<FirestoreProduct[]>([]);
+  const [products, setProducts] = useState<FirestoreProduct[]>([]);
   const [categories, setCategories] = useState<FirestoreCategory[]>([]);
   const [brands, setBrands] = useState<FirestoreBrand[]>([]);
+  const [industries, setIndustries] = useState<FirestoreIndustry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [open, setOpen] = useState(false);
@@ -26,8 +26,19 @@ const AdminProducts = () => {
     name: '', slug: '', brand: '', category: '', model: '', sku: '',
     shortDescription: '', fullDescription: '', specifications: [],
     applications: [], features: [], image: '', images: [],
-    featured: false, status: 'active' as const, tags: [], specSheetUrl: ''
+    featured: false, status: 'active' as const, tags: [], industryIDs: [], specSheetUrl: '',
+    isFlashSale: false, regularPrice: undefined as number | undefined, flashSalePrice: undefined as number | undefined,
+    variants: [] as ProductVariant[],
   };
+
+  const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+  const emptyVariant = (): ProductVariant => ({
+    id: generateId(),
+    name: '', sku: '', model: '',
+    regularPrice: undefined, flashSalePrice: undefined,
+    isFlashSale: false, specSheetUrl: '', stock: undefined,
+  });
 
   const [formData, setFormData] = useState<Omit<FirestoreProduct, 'id' | 'createdAt' | 'updatedAt'>>(initialForm);
 
@@ -37,27 +48,27 @@ const AdminProducts = () => {
 
   const loadData = async () => {
     try {
-      const [prodData, catData, brandData] = await Promise.all([
-        getProducts(), getCategories(), getBrands()
+      const [prodData, catData, brandData, indusData] = await Promise.all([
+        getProducts(), getCategories(), getBrands(), getIndustries()
       ]);
-      setFirebaseProducts(prodData);
+      setProducts(prodData);
       setCategories(catData);
       setBrands(brandData);
-    } catch (err) {
-      console.error('Data load error:', err);
+      setIndustries(indusData);
+    } catch {
       toast.error('Failed to load admin data.');
     } finally {
       setLoading(false);
     }
   };
 
-  const filtered = firebaseProducts.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this product?')) return;
     try {
       await deleteProduct(id);
-      setFirebaseProducts(prev => prev.filter(p => p.id !== id));
+      setProducts(prev => prev.filter(p => p.id !== id));
       toast.success('Product deleted.');
     } catch (err) {
       toast.error('Failed to delete product.');
@@ -70,11 +81,11 @@ const AdminProducts = () => {
     try {
       if (editingId) {
         await updateProduct(editingId, formData);
-        setFirebaseProducts(prev => prev.map(p => p.id === editingId ? { ...p, ...formData } : p));
+        setProducts(prev => prev.map(p => p.id === editingId ? { ...p, ...formData } : p));
         toast.success('Product updated successfully');
       } else {
         const newId = await addProduct(formData);
-        setFirebaseProducts(prev => [{ id: newId, ...formData }, ...prev]);
+        setProducts(prev => [{ id: newId, ...formData }, ...prev]);
         toast.success('Product added successfully');
       }
       setOpen(false);
@@ -99,7 +110,7 @@ const AdminProducts = () => {
     if (!file) return;
     setImageUploading(true);
     try {
-      const url = await uploadToCloudinary(file);
+      const url = await uploadToSupabase(file, 'products');
       setFormData(prev => ({ ...prev, image: url }));
       toast.success('Image uploaded successfully');
     } catch {
@@ -114,7 +125,7 @@ const AdminProducts = () => {
     if (!file) return;
     setSpecUploading(true);
     try {
-      const url = await uploadToCloudinary(file);
+      const url = await uploadToSupabase(file, 'specs');
       setFormData(prev => ({ ...prev, specSheetUrl: url }));
       toast.success('Technical specification uploaded');
     } catch {
@@ -128,7 +139,7 @@ const AdminProducts = () => {
     const newStatus = current === 'active' ? 'inactive' : 'active';
     try {
       await updateProduct(id, { status: newStatus as any });
-      setFirebaseProducts(prev => prev.map(p => p.id === id ? { ...p, status: newStatus as any } : p));
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, status: newStatus as any } : p));
       toast.success(`Product ${newStatus === 'active' ? 'activated' : 'deactivated'}.`);
     } catch (err) {
       toast.error('Failed to update status.');
@@ -177,6 +188,30 @@ const AdminProducts = () => {
                     {brands.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
                   </select>
                 </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>Industries</Label>
+                  <div className="flex flex-wrap gap-3 p-3 border rounded-md bg-muted/20">
+                    {industries.map(ind => (
+                      <label key={ind.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted p-1 rounded transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={formData.industryIDs?.includes(ind.id!) || false}
+                          onChange={(e) => {
+                            const current = formData.industryIDs || [];
+                            if (e.target.checked) {
+                              setFormData({ ...formData, industryIDs: [...current, ind.id!] });
+                            } else {
+                              setFormData({ ...formData, industryIDs: current.filter(id => id !== ind.id!) });
+                            }
+                          }}
+                          className="rounded border-primary text-primary focus:ring-primary h-4 w-4"
+                        />
+                        {ind.name}
+                      </label>
+                    ))}
+                    {industries.length === 0 && <span className="text-sm text-muted-foreground">No industries found. Create one first.</span>}
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="model">Model Name</Label>
                   <Input id="model" required value={formData.model} onChange={e => setFormData({ ...formData, model: e.target.value })} placeholder="Model Number/Name" />
@@ -184,6 +219,54 @@ const AdminProducts = () => {
                 <div className="space-y-2">
                   <Label htmlFor="sku">SKU Code</Label>
                   <Input id="sku" required value={formData.sku} onChange={e => setFormData({ ...formData, sku: e.target.value })} placeholder="SKU-XXXX" />
+                </div>
+              </div>
+
+              <div className={`space-y-4 col-span-2 border rounded-lg p-5 transition-all duration-500 ${formData.isFlashSale ? 'bg-amber-50/50 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'bg-muted/10'}`}>
+                <h3 className={`font-bold text-sm flex items-center gap-2 ${formData.isFlashSale ? 'text-amber-600' : 'text-foreground'}`}>
+                  {formData.isFlashSale && '⚡'} Premium Pricing & Flash Sale
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
+                  <div className="space-y-2">
+                    <Label htmlFor="regularPrice" className={formData.isFlashSale ? 'text-amber-800' : ''}>Standard Price (Optional)</Label>
+                    <Input
+                      id="regularPrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.regularPrice || ''}
+                      onChange={e => setFormData({ ...formData, regularPrice: parseFloat(e.target.value) || undefined })}
+                      placeholder="e.g. 1500"
+                      className={formData.isFlashSale ? 'border-amber-200 focus-visible:ring-amber-500' : ''}
+                    />
+                  </div>
+                  <div className="space-y-2 pb-2">
+                    <label className={`flex items-center gap-2 text-sm font-bold cursor-pointer transition-colors ${formData.isFlashSale ? 'text-amber-600' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={formData.isFlashSale || false}
+                        onChange={e => setFormData({ ...formData, isFlashSale: e.target.checked })}
+                        className={`rounded h-4 w-4 ${formData.isFlashSale ? 'border-amber-500 text-amber-500 focus:ring-amber-500' : 'border-primary text-primary focus:ring-primary'}`}
+                      />
+                      Enable Premium Flash Sale
+                    </label>
+                  </div>
+                  {formData.isFlashSale && (
+                    <div className="space-y-2 col-span-1 sm:col-span-2 animate-fade-in-up">
+                      <Label htmlFor="flashSalePrice" className="text-amber-600 font-bold flex items-center gap-1 text-base">Flash Sale Price</Label>
+                      <Input
+                        id="flashSalePrice"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.flashSalePrice || ''}
+                        onChange={e => setFormData({ ...formData, flashSalePrice: parseFloat(e.target.value) || undefined })}
+                        placeholder="e.g. 999"
+                        className="border-amber-400 focus-visible:ring-amber-500 bg-white h-12 text-lg font-bold shadow-inner"
+                        required={formData.isFlashSale}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -238,6 +321,63 @@ const AdminProducts = () => {
               <div className="space-y-2">
                 <Label htmlFor="fullDesc">Full Description</Label>
                 <Textarea id="fullDesc" required className="min-h-[120px]" value={formData.fullDescription} onChange={e => setFormData({ ...formData, fullDescription: e.target.value })} placeholder="Detailed product overview..." />
+              </div>
+
+              {/* ── Variants ── */}
+              <div className="col-span-2 space-y-3 border rounded-xl p-5 bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-bold">Product Variants</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">Add pack sizes or configurations (e.g. 24 Pack, 96 Pack)</p>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setFormData(p => ({ ...p, variants: [...(p.variants ?? []), emptyVariant()] }))}>
+                    <PackagePlus className="h-4 w-4 mr-2" /> Add Variant
+                  </Button>
+                </div>
+
+                {(formData.variants ?? []).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No variants — this product has a single configuration.</p>
+                )}
+
+                {(formData.variants ?? []).map((v, i) => (
+                  <div key={v.id} className="border rounded-lg p-4 bg-background space-y-3 relative">
+                    <button type="button" onClick={() => setFormData(p => ({ ...p, variants: p.variants!.filter((_, idx) => idx !== i) }))}
+                      className="absolute top-3 right-3 p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive transition-colors">
+                      <X className="h-4 w-4" />
+                    </button>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Variant {i + 1}</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Variant Name *</Label>
+                        <Input placeholder="e.g. 24 Pack" value={v.name} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">SKU</Label>
+                        <Input placeholder="SKU-24PK" value={v.sku} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, sku: e.target.value } : x) }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Model</Label>
+                        <Input placeholder="Model number" value={v.model} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, model: e.target.value } : x) }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Stock (optional)</Label>
+                        <Input type="number" placeholder="Qty" value={v.stock ?? ''} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, stock: parseInt(e.target.value) || undefined } : x) }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Regular Price (Rs)</Label>
+                        <Input type="number" placeholder="0.00" value={v.regularPrice ?? ''} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, regularPrice: parseFloat(e.target.value) || undefined } : x) }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Flash Sale Price (Rs)</Label>
+                        <Input type="number" placeholder="0.00" value={v.flashSalePrice ?? ''} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, flashSalePrice: parseFloat(e.target.value) || undefined } : x) }))} />
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="checkbox" checked={v.isFlashSale ?? false} onChange={e => setFormData(p => ({ ...p, variants: p.variants!.map((x, idx) => idx === i ? { ...x, isFlashSale: e.target.checked } : x) }))} className="rounded h-4 w-4 border-primary text-primary focus:ring-primary" />
+                      Enable Flash Sale for this variant
+                    </label>
+                  </div>
+                ))}
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t">

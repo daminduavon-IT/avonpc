@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getSettings, WebsiteSettings } from '@/lib/firestore-services';
+import { getSettings, WebsiteSettings } from '@/lib/supabase-services';
 
 interface SettingsContextType {
     settings: WebsiteSettings | null;
@@ -17,8 +17,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         try {
             const data = await getSettings();
             setSettings(data);
-        } catch (error) {
-            console.error('Failed to fetch website settings:', error);
+        } catch {
         } finally {
             setLoading(false);
         }

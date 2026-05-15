@@ -14,10 +14,17 @@ export const uploadToCloudinary = async (file: File): Promise<string> => {
 
     try {
         const response = await axios.post(
-            `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+            `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
             formData
         );
-        return response.data.secure_url;
+        
+        let secureUrl = response.data.secure_url;
+        // Inject f_auto,q_auto for optimal delivery and correct PDF rendering
+        if (secureUrl.includes('/upload/')) {
+            secureUrl = secureUrl.replace('/upload/', '/upload/f_auto,q_auto/');
+        }
+        
+        return secureUrl;
     } catch (error) {
         console.error("Cloudinary upload error:", error);
         throw new Error('Failed to upload image to Cloudinary');

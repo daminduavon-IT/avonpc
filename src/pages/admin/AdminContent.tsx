@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Globe, Edit, Save, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getContentSettings, updateContentSettings } from '@/lib/supabase-services';
 import { toast } from 'sonner';
 
 const sections = [
@@ -21,17 +20,10 @@ const AdminContent = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const snap = await getDoc(doc(db, 'settings', 'content'));
-        if (snap.exists()) setContentMap(snap.data());
-      } catch (err) {
-        toast.error('Failed to load content');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    getContentSettings()
+      .then(setContentMap)
+      .catch(() => toast.error('Failed to load content'))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleEdit = (key: string) => {
@@ -44,7 +36,7 @@ const AdminContent = () => {
     setSaving(true);
     try {
       const newMap = { ...contentMap, [editingKey]: editText };
-      await setDoc(doc(db, 'settings', 'content'), newMap, { merge: true });
+      await updateContentSettings(newMap);
       setContentMap(newMap);
       toast.success('Content updated successfully');
       setEditingKey(null);

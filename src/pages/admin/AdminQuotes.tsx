@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Eye, MessageSquare } from 'lucide-react';
-import { getQuotes, updateQuoteStatus, QuoteRequest } from '@/lib/firestore-services';
+import { Eye, MessageSquare, Download, FileText, Truck } from 'lucide-react';
+import { getQuotes, updateQuoteStatus, updateQuoteField, QuoteRequest } from '@/lib/supabase-services';
 import { toast } from 'sonner';
 
 const statusColor: Record<string, string> = {
@@ -12,6 +12,7 @@ const statusColor: Record<string, string> = {
 };
 
 const statusOptions: QuoteRequest['status'][] = ['New', 'In Review', 'Quotation Sent', 'Follow Up', 'Closed'];
+const deliveryOptions: QuoteRequest['deliveryStatus'][] = ['Pending', 'Processing', 'Delivered'];
 
 const AdminQuotes = () => {
   const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
@@ -28,8 +29,7 @@ const AdminQuotes = () => {
     try {
       const data = await getQuotes();
       setQuotes(data);
-    } catch (err) {
-      console.error('Error loading quotes:', err);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -42,6 +42,17 @@ const AdminQuotes = () => {
       toast.success(`Status updated to "${status}"`);
     } catch (err) {
       toast.error('Failed to update status.');
+    }
+  };
+
+  const handleDeliveryChange = async (id: string, deliveryStatus: QuoteRequest['deliveryStatus']) => {
+    try {
+      if (!deliveryStatus) return;
+      await updateQuoteField(id, { deliveryStatus });
+      setQuotes(prev => prev.map(q => q.id === id ? { ...q, deliveryStatus } : q));
+      toast.success(`Delivery updated to "${deliveryStatus}"`);
+    } catch (err) {
+      toast.error('Failed to update delivery status.');
     }
   };
 
@@ -94,15 +105,58 @@ const AdminQuotes = () => {
                   <p><span className="text-muted-foreground">Location:</span> <span className="text-foreground">{[selectedQuote.city, selectedQuote.state, selectedQuote.country].filter(Boolean).join(', ') || '—'}</span></p>
 
                   {/* Status changer */}
-                  <div className="pt-2">
-                    <label className="text-muted-foreground text-xs block mb-1">Update Status</label>
-                    <select
-                      value={selectedQuote.status}
-                      onChange={e => handleStatusChange(selectedQuote.id!, e.target.value as QuoteRequest['status'])}
-                      className="w-full px-3 py-2 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    >
-                      {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                  <div className="pt-3 flex gap-4">
+                    <div className="flex-1">
+                      <label className="text-muted-foreground text-xs block mb-1">Update Status</label>
+                      <select
+                        value={selectedQuote.status}
+                        onChange={e => handleStatusChange(selectedQuote.id!, e.target.value as QuoteRequest['status'])}
+                        className="w-full px-3 py-2 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-muted-foreground text-xs block mb-1 flex items-center gap-1"><Truck className="h-3 w-3" /> Delivery Status</label>
+                      <select
+                        value={selectedQuote.deliveryStatus || 'Pending'}
+                        onChange={e => handleDeliveryChange(selectedQuote.id!, e.target.value as QuoteRequest['deliveryStatus'])}
+                        className="w-full px-3 py-2 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        {deliveryOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Logistics Info & Slip */}
+                  <div className="pt-4 border-t mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-muted-foreground text-xs mb-1">Tier / Method</p>
+                      <div className="font-semibold text-foreground uppercase text-[10px] tracking-wider bg-muted inline-block px-2 py-0.5 rounded">
+                        {selectedQuote.logisticsTier || 'Standard'} • {selectedQuote.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Bank Transfer'}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs mb-1">Payment Slip</p>
+                      {selectedQuote.paymentSlipUrl ? (
+                        <button 
+                          onClick={() => {
+                            let url = selectedQuote.paymentSlipUrl!;
+                            if (!url.startsWith('http')) url = 'https://' + url;
+                            if (url.includes('res.cloudinary.com') && !url.includes('f_auto,q_auto')) {
+                                url = url.replace('/upload/', '/upload/f_auto,q_auto/');
+                            }
+                            window.open(url, '_blank', 'noopener,noreferrer');
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-accent hover:text-accent/80 transition-colors bg-transparent border-none p-0 cursor-pointer"
+                          type="button"
+                        >
+                          <FileText className="h-4 w-4" /> View Document
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Not provided</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Products */}

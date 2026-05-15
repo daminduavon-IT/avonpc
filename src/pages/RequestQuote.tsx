@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
 import {
@@ -8,7 +8,9 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { submitQuote } from '@/lib/firestore-services';
+import { submitQuote } from '@/lib/supabase-services';
+import { uploadToSupabase } from '@/lib/supabase-services';
+import { UploadCloud } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -19,9 +21,14 @@ const RequestQuote = () => {
   const { items, removeItem, updateQuantity, clearCart, itemCount } = useQuote();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [logisticsTier, setLogisticsTier] = useState<'pickup' | 'courier' | 'avon'>('pickup');
+  const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'cod'>('bank_transfer');
+  const [paymentSlip, setPaymentSlip] = useState<File | null>(null);
   const [form, setForm] = useState({
     name: profile?.displayName || '',
     company: profile?.company || '',
@@ -30,8 +37,8 @@ const RequestQuote = () => {
     country: '', state: '', city: '', message: ''
   });
 
-  // Update form when profile loads
-  useState(() => {
+  // Update form when profile loads (auth is async)
+  useEffect(() => {
     if (profile) {
       setForm(prev => ({
         ...prev,
@@ -41,7 +48,7 @@ const RequestQuote = () => {
         phone: profile.phone || prev.phone
       }));
     }
-  });
+  }, [profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,25 +56,74 @@ const RequestQuote = () => {
       toast.error('Please add at least one product to your quote cart.');
       return;
     }
+    if (paymentMethod === 'bank_transfer' && !paymentSlip) {
+      toast.error('Please upload your bank payment slip to proceed.');
+      return;
+    }
     setLoading(true);
+    setProgress(0);
+    
+    // Simulate generation progress
+    const progressInterval = setInterval(() => {
+      setProgress(p => Math.min(p + 15, 95));
+    }, 400);
+
     try {
-      await submitQuote({
+      let paymentSlipUrl = '';
+      if (paymentSlip) {
+        paymentSlipUrl = await uploadToSupabase(paymentSlip, 'quotes');
+      }
+
+      const quotePayload: any = {
         ...form,
-        userId: user?.uid,
+        logisticsTier,
+        paymentMethod,
         products: items.map(item => ({
           id: item.id,
           name: item.name,
-          brand: item.brand,
-          model: item.model,
+          brand: item.brand || 'Generic',
+          model: item.model || 'Standard',
           quantity: item.quantity,
+          isFlashSale: Boolean(item.isFlashSale),
         })),
-      });
-      clearCart();
-      setSubmitted(true);
+      };
+
+      if (paymentSlipUrl) quotePayload.paymentSlipUrl = paymentSlipUrl;
+      if (user?.id) quotePayload.userId = user.id;
+
+      await submitQuote(quotePayload);
+
+      // Dispatch the Branded HTML Emails to the backend
+      const emailApiUrl = import.meta.env.VITE_EMAIL_API_URL || 'http://localhost:5000';
+      try {
+        await fetch(`${emailApiUrl}/api/send-quote-emails`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...form,
+            logisticsTier,
+            paymentMethod,
+            paymentSlipUrl,
+            products: items.map(i => ({ name: i.name, brand: i.brand, model: i.model, quantity: i.quantity, isFlashSale: i.isFlashSale }))
+          })
+        });
+      } catch (e) {
+        void e;
+      }
+
+      clearInterval(progressInterval);
+      setProgress(100);
+      
+      setTimeout(() => {
+        clearCart();
+        setSubmitted(true);
+        setLoading(false);
+      }, 500);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to submit quote. Please try again.');
-    } finally {
+      clearInterval(progressInterval);
       setLoading(false);
+      setProgress(0);
+      toast.error(err.message || 'Failed to submit quote. Please try again.');
     }
   };
 
@@ -341,10 +397,120 @@ const RequestQuote = () => {
                         />
                       </div>
 
+                      {/* Logistics Section */}
+                      <div className="pt-4 border-t border-border/50">
+                        <h3 className="text-lg font-bold text-foreground mb-4">Logistics & Payment</h3>
+                        
+                        <div className="grid md:grid-cols-3 gap-4 mb-6">
+                          {/* Pickup */}
+                          <div 
+                            onClick={() => { setLogisticsTier('pickup'); setPaymentMethod('bank_transfer'); }}
+                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${logisticsTier === 'pickup' ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 scale-[1.02]' : 'border-border bg-background hover:border-primary/50'}`}
+                          >
+                            <h4 className="font-bold text-foreground text-sm mb-1">Pickup from Store</h4>
+                            <p className="text-xs text-muted-foreground">Collect at your convenience. Bank Transfer only.</p>
+                          </div>
+                          {/* Courier */}
+                          <div 
+                            onClick={() => setLogisticsTier('courier')}
+                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${logisticsTier === 'courier' ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 scale-[1.02]' : 'border-border bg-background hover:border-primary/50'}`}
+                          >
+                            <h4 className="font-bold text-foreground text-sm mb-1">Courier Delivery</h4>
+                            <p className="text-xs text-muted-foreground">Nationwide shipping via 3rd party providers.</p>
+                          </div>
+                          {/* Avon Delivery */}
+                          <div 
+                            onClick={() => setLogisticsTier('avon')}
+                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${logisticsTier === 'avon' ? 'border-primary bg-primary/5 shadow-md shadow-primary/10 scale-[1.02]' : 'border-border bg-background hover:border-primary/50'}`}
+                          >
+                            <h4 className="font-bold text-foreground text-sm mb-1">Delivered by Avon</h4>
+                            <p className="text-xs text-muted-foreground">Premium white-glove delivery by our fleet.</p>
+                          </div>
+                        </div>
+
+                        {/* Payment Selection */}
+                        <div className="mb-6 space-y-3">
+                          <h4 className="font-semibold text-sm text-foreground mb-2">Payment Method</h4>
+                          
+                          <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${paymentMethod === 'bank_transfer' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/30'}`}>
+                            <input 
+                              type="radio" 
+                              name="paymentMethod" 
+                              checked={paymentMethod === 'bank_transfer'} 
+                              onChange={() => setPaymentMethod('bank_transfer')} 
+                              className="text-primary focus:ring-primary h-4 w-4 mt-0.5" 
+                            />
+                            <div>
+                              <p className="font-bold text-sm text-foreground">Bank Transfer</p>
+                              {paymentMethod === 'bank_transfer' && (
+                                <div className="mt-2 text-xs text-muted-foreground space-y-1.5 bg-background p-4 rounded-md border shadow-sm">
+                                  <p><strong>Bank:</strong> Commercial Bank, Sri Lanka</p>
+                                  <p><strong>Account Name:</strong> Avon Pharmo Chem (Pvt) Ltd</p>
+                                  <p className="text-sm"><strong>Account Number:</strong> <span className="text-foreground tracking-wider bg-muted px-1.5 py-0.5 rounded">1234 5678 9012</span></p>
+                                </div>
+                              )}
+                            </div>
+                          </label>
+
+                          {logisticsTier !== 'pickup' && (
+                            <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/30'}`}>
+                              <input 
+                                type="radio" 
+                                name="paymentMethod" 
+                                checked={paymentMethod === 'cod'} 
+                                onChange={() => setPaymentMethod('cod')} 
+                                className="text-primary focus:ring-primary h-4 w-4" 
+                              />
+                              <p className="font-bold text-sm text-foreground">Cash on Delivery (COD)</p>
+                            </label>
+                          )}
+                        </div>
+
+                        {/* Payment Slip Upload */}
+                        {paymentMethod === 'bank_transfer' && (
+                          <div className="mb-4 animate-fade-in-up">
+                            <h4 className="font-semibold text-sm text-foreground mb-2">Upload Payment Slip <span className="text-destructive">*</span></h4>
+                            <label className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl transition-colors cursor-pointer ${paymentSlip ? 'border-primary bg-primary/5' : 'border-border bg-muted/30 hover:bg-muted/50 hover:border-primary/50'}`}>
+                              <UploadCloud className={`h-10 w-10 mb-3 mx-auto ${paymentSlip ? 'text-primary' : 'text-muted-foreground'}`} />
+                              <span className={`text-sm font-bold block mb-1 ${paymentSlip ? 'text-primary' : 'text-foreground'}`}>
+                                {paymentSlip ? paymentSlip.name : 'Click to upload payment slip'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">{paymentSlip ? 'File ready to submit' : 'JPG, PNG or PDF (Required to proceed)'}</span>
+                              <input 
+                                type="file" 
+                                className="hidden" 
+                                accept="image/*,.pdf" 
+                                onChange={e => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+                                  if (!allowed.includes(file.type)) { toast.error('Only JPG, PNG, WebP or PDF files are accepted.'); return; }
+                                  if (file.size > 5 * 1024 * 1024) { toast.error('File must be under 5 MB.'); return; }
+                                  setPaymentSlip(file);
+                                }}
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-muted-foreground">
                         <p>🔒 Your information is kept confidential and will only be used to prepare your quotation. We typically respond within <strong className="text-foreground">24 business hours</strong>.</p>
                       </div>
                     </form>
+
+                    {/* Progress Bar Loader */}
+                    {loading && (
+                      <div className="mt-6 mb-2 space-y-2 animate-fade-in-up">
+                        <div className="flex justify-between text-xs font-bold text-primary uppercase tracking-wider">
+                          <span className="animate-pulse">Generating your special quote...</span>
+                          <span>{progress}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-between mt-4">
                       <Button variant="outline" onClick={() => setStep(0)}>

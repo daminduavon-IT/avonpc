@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { getBrands, getProducts, FirestoreBrand, FirestoreProduct } from '@/lib/firestore-services';
+import { getBrands, getProducts, FirestoreBrand, FirestoreProduct } from '@/lib/supabase-services';
 import { ArrowRight, Loader2, Package } from 'lucide-react';
 
 const Brands = () => {
@@ -12,7 +12,7 @@ const Brands = () => {
   useEffect(() => {
     Promise.all([getBrands(), getProducts({ status: 'active' })])
       .then(([b, p]) => { setBrandsList(b); setAllProducts(p); })
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

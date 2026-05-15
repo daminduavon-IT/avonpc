@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, FileText, CheckCircle2, Clock, XCircle, Loader2 } from 'lucide-react';
-import { getQuotes, QuoteRequest } from '@/lib/firestore-services';
+import { getQuotes, QuoteRequest } from '@/lib/supabase-services';
 
 const AdminReports = () => {
   const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
@@ -16,14 +16,8 @@ const AdminReports = () => {
   // Build monthly counts from actual data
   const monthlyCounts: Record<string, number> = {};
   quotes.forEach((q) => {
-    let date: Date;
-    if (q.createdAt?.toDate) {
-      date = q.createdAt.toDate();
-    } else if (q.createdAt) {
-      date = new Date(q.createdAt);
-    } else {
-      return;
-    }
+    if (!q.createdAt) return;
+    const date = new Date(q.createdAt);
     const key = date.toLocaleString('default', { month: 'short', year: '2-digit' });
     monthlyCounts[key] = (monthlyCounts[key] || 0) + 1;
   });

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
 import { industries } from '@/data/catalog';
-import { getProducts, getCategories, getBrands, FirestoreProduct, FirestoreCategory, FirestoreBrand } from '@/lib/firestore-services';
+import { getProducts, getCategories, getBrands, getIndustries, FirestoreProduct, FirestoreCategory, FirestoreBrand, FirestoreIndustry } from '@/lib/supabase-services';
 import { useSettings } from '@/context/SettingsContext';
 import { Shield, Truck, Award, HeadphonesIcon, ArrowRight, FlaskConical, FileText, Loader2, CheckCircle2, Plus, Phone, Mail, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -22,6 +22,7 @@ const Index = () => {
   const [featuredProducts, setFeaturedProducts] = useState<FirestoreProduct[]>([]);
   const [categories, setCategories] = useState<FirestoreCategory[]>([]);
   const [brands, setBrands] = useState<FirestoreBrand[]>([]);
+  const [dbIndustries, setDbIndustries] = useState<FirestoreIndustry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const isInCart = (id?: string) => !!id && items.some(i => i.id === id);
@@ -55,16 +56,18 @@ const Index = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [fetchedProducts, fetchedCategories, fetchedBrands] = await Promise.all([
+        const [fetchedProducts, fetchedCategories, fetchedBrands, fetchedInds] = await Promise.all([
           getProducts({ featured: true, status: 'active' }),
           getCategories(),
-          getBrands()
+          getBrands(),
+          getIndustries()
         ]);
         setFeaturedProducts(fetchedProducts);
         setCategories(fetchedCategories);
         setBrands(fetchedBrands);
-      } catch (error) {
-        console.error('Error fetching data:', error);
+        setDbIndustries(fetchedInds);
+      } catch {
+        // silent; page renders with empty state
       } finally {
         setLoading(false);
       }
@@ -186,14 +189,19 @@ const Index = () => {
             {featuredProducts.slice(0, 4).map((product) => {
               const inCart = isInCart(product.id);
               return (
-                <div key={product.id} className="bg-card rounded-2xl border overflow-hidden card-hover group flex flex-col h-full">
+                <div key={product.id} className={`rounded-2xl border overflow-hidden card-hover group flex flex-col h-full animate-fade-in-up transition-transform duration-300 hover:scale-105 ${product.isFlashSale ? 'glass-panel glass-glow border-amber-500/30' : 'bg-card relative'}`}>
                   <Link to={`/product/${product.slug}`} className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center shrink-0">
                     {product.image ? (
                       <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     ) : (
                       <FlaskConical className="h-14 w-14 text-primary/20 transition-transform duration-500 group-hover:scale-110" />
                     )}
-                    <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Featured</span>
+                    {product.featured && !product.isFlashSale && (
+                      <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Featured</span>
+                    )}
+                    {product.isFlashSale && (
+                      <span className="absolute top-3 left-3 bg-destructive text-destructive-foreground text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md shadow-destructive/20 animate-pulse">⚡ Flash Sale</span>
+                    )}
                   </Link>
                   <div className="p-5 flex flex-col flex-1">
                     <div className="mb-auto">
@@ -201,9 +209,46 @@ const Index = () => {
                       <Link to={`/product/${product.slug}`}>
                         <h3 className="font-bold text-foreground mb-1 line-clamp-2 hover:text-primary transition-colors">{product.name}</h3>
                       </Link>
+                      {product.industryIDs && product.industryIDs.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {product.industryIDs.map(id => {
+                            const ind = dbIndustries.find(i => i.id === id);
+                            return ind ? (
+                              <span key={id} className="text-[9px] font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                {ind.name}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{product.shortDescription}</p>
                     </div>
-                    <div className="flex gap-2 pt-2 border-t border-border/50">
+                    {product.isFlashSale ? (
+                      <div className="mb-4">
+                        <div className="mb-2 space-y-1">
+                          <div className="flex justify-between text-[10px] font-black text-amber-500 uppercase tracking-wide">
+                            <span>Limited Stock</span>
+                            <span className="animate-pulse flex items-center gap-1">⚡ Exclusive Offer</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full w-[85%]" />
+                          </div>
+                        </div>
+                        <div className="flex items-baseline gap-2 mt-3">
+                          {product.flashSalePrice && <span className="gold-gradient-text text-2xl tracking-tighter">Rs {product.flashSalePrice.toLocaleString()}</span>}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-4 relative overflow-hidden flex items-center rounded-lg border border-border/40 p-1">
+                        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-5xl font-black text-muted/30 select-none pointer-events-none whitespace-nowrap tracking-tighter">QUOTE ONLY</span>
+                        <Link to={`/product/${product.slug}`} className="w-full relative z-10">
+                          <Button variant="ghost" size="sm" className="w-full text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all">
+                            Request Spec & Quote
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                    <div className="flex gap-2 pt-2 border-t border-border/50 relative z-10">
                       <Link to={`/product/${product.slug}`} className="flex-1">
                         <Button variant="outline" size="sm" className="w-full text-xs font-semibold h-9 rounded-lg">Details</Button>
                       </Link>

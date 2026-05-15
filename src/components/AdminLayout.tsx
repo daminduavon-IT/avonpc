@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate, Navigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Layers, Tag, FileText, Users,
-  Image, Settings, BarChart3, Globe, PanelLeft, LogOut, MessageSquare
+  Image, Settings, BarChart3, Globe, PanelLeft, LogOut, MessageSquare, Loader2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
@@ -12,6 +11,7 @@ const sidebarItems = [
   { label: 'Products', path: '/admin/products', icon: Package },
   { label: 'Categories', path: '/admin/categories', icon: Layers },
   { label: 'Brands', path: '/admin/brands', icon: Tag },
+  { label: 'Industries', path: '/admin/industries', icon: Layers },
   { label: 'Quote Requests', path: '/admin/quotes', icon: FileText },
   { label: 'Customers', path: '/admin/customers', icon: Users },
   { label: 'Media', path: '/admin/media', icon: Image },
@@ -27,8 +27,17 @@ const AdminLayout = () => {
   const { user, profile, loading, logout } = useAuth();
   const isActive = (path: string) => location.pathname === path;
 
-  // Protect admin route
-  if (!loading && (!user || profile?.role !== 'admin')) {
+  // Still initialising — don't redirect yet
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Auth resolved — redirect non-admins
+  if (!user || profile?.role !== 'admin') {
     toast.error('Unauthorized access. Admin privileges required.');
     return <Navigate to="/login" replace />;
   }

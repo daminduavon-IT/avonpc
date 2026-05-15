@@ -9,7 +9,6 @@ import avonLogo from '@/assets/avon-logo.png';
 
 const navItems = [
   { label: 'Home', path: '/' },
-  { label: 'About Us', path: '/about' },
   {
     label: 'Products', path: '/products',
     children: [
@@ -24,7 +23,6 @@ const navItems = [
   },
   { label: 'Brands', path: '/brands' },
   { label: 'Industries', path: '/industries' },
-  { label: 'Contact Us', path: '/contact' },
 ];
 
 const Header = () => {
@@ -73,7 +71,7 @@ const Header = () => {
             <img src={avonLogo} alt="Avon Pharmo Chem" className="h-10 lg:h-14 w-auto" />
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1 bg-muted/40 backdrop-blur-md border border-border/50 rounded-full px-2 py-1.5 shadow-sm">
             {navItems.map((item) => (
               <div
                 key={item.path}
@@ -83,7 +81,7 @@ const Header = () => {
               >
                 <Link
                   to={item.path}
-                  className={`px-3 py-2 text-sm font-medium rounded-md btn-transition flex items-center gap-1 ${isActive(item.path) ? 'text-primary bg-primary/5' : 'text-foreground hover:text-primary hover:bg-primary/5'
+                  className={`px-4 py-2 text-sm font-bold tracking-wide rounded-full btn-transition flex items-center gap-1 ${isActive(item.path) ? 'text-primary bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                     }`}
                 >
                   {item.label}
@@ -115,8 +113,11 @@ const Header = () => {
                 </span>
               )}
             </button>
+            <Link to="/flash-sale" className="hidden sm:block">
+              <Button variant="destructive" size="sm" className="font-black tracking-wide flex items-center gap-1.5 shadow-lg shadow-destructive/30 active:scale-95 transition-all shimmer-bg rounded-lg px-4 border border-destructive/50">⚡ Flash Sale</Button>
+            </Link>
             <Link to="/request-quote" className="hidden sm:block">
-              <Button variant="accent" size="sm">Request Quote</Button>
+              <Button variant="accent" size="sm" className="active:scale-95 transition-all">Request Quote</Button>
             </Link>
             <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 rounded-md hover:bg-muted" aria-label="Menu">
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -159,8 +160,11 @@ const Header = () => {
                   )}
                 </div>
               ))}
+              <Link to="/flash-sale" onClick={() => setMobileOpen(false)}>
+                <Button variant="destructive" className="w-full mt-3 font-black tracking-wide flex items-center justify-center gap-1.5 shadow-lg shadow-destructive/30 shimmer-bg border border-destructive/50 rounded-lg">⚡ Flash Sale</Button>
+              </Link>
               <Link to="/request-quote" onClick={() => setMobileOpen(false)}>
-                <Button variant="accent" className="w-full mt-3">Request Quote</Button>
+                <Button variant="accent" className="w-full mt-2">Request Quote</Button>
               </Link>
             </div>
           </div>

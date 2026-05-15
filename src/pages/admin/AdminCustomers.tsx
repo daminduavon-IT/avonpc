@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, Loader2 } from 'lucide-react';
-import { getCustomers } from '@/lib/firestore-services';
+import { getCustomers } from '@/lib/supabase-services';
 import { toast } from 'sonner';
 
 const AdminCustomers = () => {
