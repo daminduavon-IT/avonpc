@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
 import { getProductBySlug, getProducts, getIndustries, FirestoreProduct, FirestoreIndustry, ProductVariant } from '@/lib/supabase-services';
-import { ChevronRight, Download, FlaskConical, CheckCircle2, Loader2, Plus, ArrowRight } from 'lucide-react';
+import { ChevronRight, Download, FlaskConical, CheckCircle2, Loader2, Plus, ArrowRight, Phone, MessageCircle, ShieldCheck, Truck, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSettings } from '@/context/SettingsContext';
 
@@ -17,39 +17,35 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'applications'>('overview');
 
-  const isInCart = !!product?.id && items.some(i => i.id === product.id);
+  const cartId = product?.id ? (selectedVariant ? `${product.id}-${selectedVariant.id}` : product.id) : null;
+  const isInCart = !!cartId && items.some(i => i.id === cartId);
 
   useEffect(() => {
     const fetchProductDetails = async () => {
       if (!slug) return;
       setLoading(true);
-      setProduct(null); // Reset product while fetching
+      setProduct(null);
+      setSelectedVariant(null);
       try {
-        const [productData, indData] = await Promise.all([
-          getProductBySlug(slug),
-          getIndustries()
-        ]);
+        const [productData, indData] = await Promise.all([getProductBySlug(slug), getIndustries()]);
         setProduct(productData);
         setActiveImage(productData?.image || null);
-        // Auto-select first variant if any
         if (productData?.variants && productData.variants.length > 0) {
           setSelectedVariant(productData.variants[0]);
         }
         setDbIndustries(indData);
-
         if (productData) {
-          // Fetch related products from the same category
           const related = await getProducts({ category: productData.category, status: 'active' });
           setRelatedProducts(related.filter(p => p.id !== productData.id).slice(0, 4));
         }
       } catch {
-        // product not found or network error
+        // not found
       } finally {
         setLoading(false);
       }
     };
-
     fetchProductDetails();
     window.scrollTo(0, 0);
   }, [slug]);
@@ -73,11 +69,16 @@ const ProductDetail = () => {
     );
   }
 
+  const displayPrice = selectedVariant?.regularPrice ?? product.regularPrice;
+  const displayFlashPrice = selectedVariant?.flashSalePrice ?? product.flashSalePrice;
+  const isFlashActive = selectedVariant ? selectedVariant.isFlashSale : product.isFlashSale;
+  const allImages = [product.image, ...(product.images || []).filter(img => img !== product.image)].filter(Boolean) as string[];
+
   return (
-    <div className="bg-background pb-20">
+    <div className="bg-background">
       {/* Breadcrumb */}
-      <div className="bg-muted border-b">
-        <div className="container-main py-3.5 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+      <div className="bg-muted/60 border-b">
+        <div className="container-main py-3 flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
           <Link to="/" className="hover:text-primary transition-colors">Home</Link>
           <ChevronRight className="h-3 w-3" />
           <Link to="/products" className="hover:text-primary transition-colors">Products</Link>
@@ -88,312 +89,353 @@ const ProductDetail = () => {
             </>
           )}
           <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground font-semibold truncate">{product.name}</span>
+          <span className="text-foreground font-medium truncate max-w-[200px]">{product.name}</span>
         </div>
       </div>
 
-      <div className="container-main pt-8 lg:pt-14">
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
-          {/* Left: Image Gallery */}
-          <div className="flex flex-col gap-4">
-            <div className="relative group">
-              <div className="bg-card border-2 border-muted rounded-3xl aspect-square flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-xl transition-all duration-500">
-                {activeImage ? (
-                  <img
-                    src={activeImage}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                ) : (
-                  <FlaskConical className="h-32 w-32 text-primary/10 transition-transform duration-700 group-hover:scale-110" />
-                )}
-              </div>
-              {product.featured && !product.isFlashSale && (
-                <span className="absolute top-6 left-6 bg-accent text-accent-foreground text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">Featured</span>
+      <div className="container-main py-10 lg:py-16">
+        {/* Main Product Section */}
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 mb-16">
+
+          {/* LEFT: Image Gallery */}
+          <div className="space-y-3">
+            {/* Main image */}
+            <div className="relative rounded-2xl overflow-hidden bg-white border aspect-square shadow-sm">
+              {activeImage ? (
+                <img src={activeImage} alt={product.name} className="w-full h-full object-contain p-6" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <FlaskConical className="h-28 w-28 text-primary/10" />
+                </div>
               )}
+              {/* Badges */}
               {product.isFlashSale && (
-                <span className="absolute top-6 left-6 shimmer-bg bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-full shadow-xl shadow-amber-500/40 flex items-center gap-2 border border-white/20">
-                  ⚡ Flash Sale
-                </span>
+                <div className="absolute top-4 left-4">
+                  <span className="bg-amber-500 text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5">
+                    ⚡ Flash Sale
+                  </span>
+                </div>
+              )}
+              {product.featured && !product.isFlashSale && (
+                <div className="absolute top-4 left-4">
+                  <span className="bg-primary text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg">
+                    Featured
+                  </span>
+                </div>
               )}
             </div>
-            {/* Thumbnail strip — shown only when product has multiple images */}
-            {product.images && product.images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {[product.image, ...product.images.filter(img => img !== product.image)].filter(Boolean).map((img, i) => (
+
+            {/* Thumbnails */}
+            {allImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {allImages.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveImage(img)}
-                    className={`shrink-0 h-20 w-20 rounded-xl border-2 overflow-hidden transition-all ${activeImage === img ? 'border-primary shadow-md' : 'border-muted hover:border-primary/50'}`}
+                    className={`shrink-0 h-16 w-16 rounded-xl border-2 overflow-hidden bg-white transition-all ${activeImage === img ? 'border-primary shadow-md scale-105' : 'border-muted hover:border-primary/40'}`}
                   >
-                    <img src={img} alt={`${product.name} view ${i + 1}`} className="w-full h-full object-cover" />
+                    <img src={img} alt={`view ${i + 1}`} className="w-full h-full object-contain p-1" />
                   </button>
                 ))}
               </div>
             )}
+
+            {/* Trust badges */}
+            <div className="grid grid-cols-3 gap-2 pt-2">
+              {[
+                { icon: ShieldCheck, label: 'Quality Certified' },
+                { icon: Truck, label: 'Fast Delivery' },
+                { icon: Award, label: '30+ Yrs Exp.' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex flex-col items-center gap-1.5 bg-muted/50 rounded-xl py-3 px-2 border">
+                  <Icon className="h-4 w-4 text-primary" />
+                  <span className="text-[10px] font-bold text-muted-foreground text-center leading-tight">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Right: Info */}
-          <div className="flex flex-col">
-            <div className="mb-8">
-              <span className="inline-block text-accent font-black text-xs uppercase tracking-[0.2em] mb-3">{product.brand}</span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground mb-4 leading-tight">{product.name}</h1>
-              <div className="flex flex-wrap gap-4 text-xs font-bold mb-8">
-                <span className="bg-muted px-4 py-2 rounded-xl text-muted-foreground flex items-center">Category: <span className="text-foreground ml-1">{product.category}</span></span>
-                <span className="bg-muted px-4 py-2 rounded-xl text-muted-foreground flex items-center">Model: <span className="text-foreground ml-1">{product.model}</span></span>
-                <span className="bg-muted px-4 py-2 rounded-xl text-muted-foreground flex items-center">SKU: <span className="text-foreground ml-1">{product.sku}</span></span>
-                {product.industryIDs && product.industryIDs.length > 0 && (
-                  <span className="bg-muted px-4 py-2 rounded-xl text-muted-foreground flex items-center gap-1.5">
-                    Industries: 
-                    <span className="flex gap-1 flex-wrap">
-                      {product.industryIDs.map(id => {
-                        const ind = dbIndustries.find(i => i.id === id);
-                        return ind ? <span key={id} className="text-foreground bg-background/50 border border-border/50 px-2 py-0.5 rounded-md">{ind.name}</span> : null;
-                      })}
-                    </span>
+          {/* RIGHT: Product Info */}
+          <div className="flex flex-col gap-6">
+            {/* Brand + Title */}
+            <div>
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-accent">{product.brand}</span>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground mt-1 mb-3 leading-tight">{product.name}</h1>
+              <p className="text-muted-foreground leading-relaxed">{product.shortDescription}</p>
+            </div>
+
+            {/* Meta tags */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'Category', value: product.category },
+                { label: 'Model', value: product.model },
+                { label: 'SKU', value: product.sku },
+              ].filter(m => m.value).map(m => (
+                <span key={m.label} className="text-xs bg-muted border rounded-lg px-3 py-1.5 text-muted-foreground">
+                  {m.label}: <span className="text-foreground font-semibold">{m.value}</span>
+                </span>
+              ))}
+              {(product.industryIDs || []).map(id => {
+                const ind = dbIndustries.find(i => i.id === id);
+                return ind ? (
+                  <span key={id} className="text-xs bg-primary/5 border border-primary/20 text-primary rounded-lg px-3 py-1.5 font-semibold">
+                    {ind.name}
                   </span>
+                ) : null;
+              })}
+            </div>
+
+            {/* Variants */}
+            {product.variants && product.variants.length > 0 && (
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">Select Pack / Variant</p>
+                <div className="flex flex-wrap gap-2">
+                  {product.variants.map(v => (
+                    <button
+                      key={v.id}
+                      onClick={() => setSelectedVariant(v)}
+                      className={`px-4 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${
+                        selectedVariant?.id === v.id
+                          ? 'border-primary bg-primary text-white shadow-md'
+                          : 'border-muted bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                      }`}
+                    >
+                      {v.name}
+                      {v.regularPrice && (
+                        <span className={`ml-2 text-xs font-normal ${selectedVariant?.id === v.id ? 'text-white/80' : 'text-muted-foreground'}`}>
+                          Rs {v.regularPrice.toLocaleString()}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {selectedVariant && (selectedVariant.sku || selectedVariant.model || selectedVariant.stock !== undefined) && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedVariant.sku && <span className="text-xs bg-muted px-2.5 py-1 rounded-lg text-muted-foreground">SKU: <span className="text-foreground font-medium">{selectedVariant.sku}</span></span>}
+                    {selectedVariant.model && <span className="text-xs bg-muted px-2.5 py-1 rounded-lg text-muted-foreground">Model: <span className="text-foreground font-medium">{selectedVariant.model}</span></span>}
+                    {selectedVariant.stock !== undefined && <span className="text-xs bg-muted px-2.5 py-1 rounded-lg text-muted-foreground">Stock: <span className="text-foreground font-medium">{selectedVariant.stock}</span></span>}
+                  </div>
                 )}
               </div>
-              <p className="text-muted-foreground text-lg leading-relaxed mb-6 max-w-xl">{product.shortDescription}</p>
+            )}
 
-              {/* Variant selector */}
-              {product.variants && product.variants.length > 0 && (
-                <div className="mb-6">
-                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Select Variant</p>
-                  <div className="flex flex-wrap gap-2">
-                    {product.variants.map(v => (
-                      <button
-                        key={v.id}
-                        onClick={() => setSelectedVariant(v)}
-                        className={`px-4 py-2 rounded-xl border-2 text-sm font-bold transition-all ${selectedVariant?.id === v.id ? 'border-primary bg-primary/5 text-primary' : 'border-muted text-muted-foreground hover:border-primary/50'}`}
-                      >
-                        {v.name}
-                        {v.regularPrice && <span className="ml-2 text-xs font-normal">Rs {v.regularPrice.toLocaleString()}</span>}
-                      </button>
-                    ))}
-                  </div>
-                  {selectedVariant && (
-                    <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                      {selectedVariant.sku && <span className="bg-muted px-3 py-1 rounded-lg">SKU: <span className="text-foreground font-medium">{selectedVariant.sku}</span></span>}
-                      {selectedVariant.model && <span className="bg-muted px-3 py-1 rounded-lg">Model: <span className="text-foreground font-medium">{selectedVariant.model}</span></span>}
-                      {selectedVariant.stock !== undefined && <span className="bg-muted px-3 py-1 rounded-lg">Stock: <span className="text-foreground font-medium">{selectedVariant.stock}</span></span>}
-                    </div>
-                  )}
+            {/* Price Block */}
+            {isFlashActive ? (
+              <div className="bg-amber-50 border-2 border-amber-400/50 rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-black uppercase tracking-widest text-amber-600">⚡ Flash Sale Price</span>
+                  <span className="text-xs font-bold text-amber-500 animate-pulse">Limited Stock</span>
                 </div>
+                <div className="h-1.5 w-full bg-amber-100 rounded-full mb-4">
+                  <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full w-[80%]" />
+                </div>
+                <p className="text-4xl font-black text-amber-600">
+                  Rs {displayFlashPrice?.toLocaleString()}
+                </p>
+                {displayPrice && (
+                  <p className="text-sm text-muted-foreground line-through mt-1">Was Rs {displayPrice.toLocaleString()}</p>
+                )}
+              </div>
+            ) : displayPrice ? (
+              <div className="bg-muted/40 border rounded-2xl p-5">
+                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">Price</p>
+                <p className="text-4xl font-black text-foreground">Rs {displayPrice.toLocaleString()}</p>
+              </div>
+            ) : (
+              <div className="bg-muted/40 border rounded-2xl p-5">
+                <p className="text-sm font-bold text-foreground mb-0.5">Price on Request</p>
+                <p className="text-xs text-muted-foreground">Add to cart and submit a quote request for pricing.</p>
+              </div>
+            )}
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                variant={isInCart ? 'outline' : 'accent'}
+                size="lg"
+                className={`flex-1 h-12 text-sm font-bold rounded-xl gap-2 transition-all ${isInCart ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10' : ''}`}
+                onClick={() => {
+                  if (isInCart) {
+                    setIsOpen(true);
+                  } else if (product.id) {
+                    addItem({
+                      id: product.id + (selectedVariant ? `-${selectedVariant.id}` : ''),
+                      name: selectedVariant ? `${product.name} — ${selectedVariant.name}` : product.name,
+                      brand: product.brand,
+                      category: product.category,
+                      model: selectedVariant?.model || product.model,
+                      image: product.image,
+                    });
+                    toast.success('Added to quote cart!');
+                  }
+                }}
+              >
+                {isInCart ? <><CheckCircle2 className="h-4 w-4" /> View in Cart</> : <><Plus className="h-4 w-4" /> Add to Quote</>}
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="flex-1 h-12 text-sm font-bold rounded-xl gap-2 disabled:opacity-40"
+                disabled={!(selectedVariant?.specSheetUrl || product.specSheetUrl)}
+                onClick={() => {
+                  const url = selectedVariant?.specSheetUrl || product.specSheetUrl;
+                  if (url) window.open(url, '_blank');
+                }}
+              >
+                <Download className="h-4 w-4" /> Download Spec Sheet
+              </Button>
+            </div>
+
+            {/* Contact strip */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t">
+              <a
+                href={`tel:${settings?.phone || ''}`}
+                className="flex-1 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 border rounded-xl px-4 py-3 text-sm font-bold text-foreground transition-colors"
+              >
+                <Phone className="h-4 w-4 text-primary" />
+                {settings?.phone || 'Call for Pricing'}
+              </a>
+              {settings?.phone && (
+                <a
+                  href={`https://wa.me/${settings.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in ${product.name} (${product.model}). Please assist.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20b558] text-white rounded-xl px-4 py-3 text-sm font-bold transition-colors"
+                >
+                  <MessageCircle className="h-4 w-4" /> WhatsApp Us
+                </a>
               )}
+            </div>
+          </div>
+        </div>
 
-              {/* Price block — reads from selected variant if present */}
-              {(selectedVariant?.isFlashSale || (!selectedVariant && product.isFlashSale)) ? (
-                <div className="mb-10 max-w-xl glass-panel glass-glow rounded-3xl p-8 border-amber-500/40">
-                  <div className="mb-6 space-y-3">
-                    <div className="flex justify-between text-sm font-black text-amber-500 uppercase tracking-widest">
-                      <span className="flex items-center gap-2">Limited Stock</span>
-                      <span className="animate-pulse flex items-center gap-1.5">⚡ Exclusive Offer</span>
-                    </div>
-                    <div className="h-2 w-full bg-black/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full w-[85%]" />
-                    </div>
-                  </div>
-                  <div className="flex items-baseline gap-4 mt-2">
-                    {(selectedVariant?.flashSalePrice ?? product.flashSalePrice) && (
-                      <span className="gold-gradient-text text-5xl tracking-tighter">
-                        Rs {(selectedVariant?.flashSalePrice ?? product.flashSalePrice)!.toLocaleString()}
-                      </span>
-                    )}
-                  </div>
+        {/* Tab Section */}
+        <div className="mb-16">
+          <div className="flex gap-1 border-b mb-8">
+            {(['overview', 'specs', 'applications'] as const).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-5 py-3 text-sm font-bold capitalize transition-all border-b-2 -mb-px ${
+                  activeTab === tab
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab === 'overview' ? 'Overview' : tab === 'specs' ? 'Specifications' : 'Applications'}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'overview' && (
+            <div className="grid lg:grid-cols-5 gap-10">
+              <div className="lg:col-span-3">
+                <div className="prose prose-sm lg:prose-base max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {product.fullDescription || <span className="italic text-muted-foreground/60">No description provided.</span>}
                 </div>
-              ) : (selectedVariant?.regularPrice ?? product.regularPrice) ? (
-                <div className="mb-10 max-w-xl bg-muted/30 border border-border/50 rounded-2xl p-6">
-                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">Price</p>
-                  <p className="text-4xl font-black text-foreground">
-                    Rs {(selectedVariant?.regularPrice ?? product.regularPrice)!.toLocaleString()}
-                  </p>
+              </div>
+              <div className="lg:col-span-2">
+                {(product.features ?? []).length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-foreground mb-4 flex items-center gap-2">
+                      <span className="h-4 w-1 bg-accent rounded-full inline-block" /> Key Features
+                    </h3>
+                    <ul className="space-y-2">
+                      {product.features!.map((f, i) => (
+                        <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
+                          <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'specs' && (
+            <div className="max-w-2xl">
+              {(product.specifications ?? []).length > 0 ? (
+                <div className="rounded-2xl border overflow-hidden">
+                  {product.specifications!.map((spec, i) => (
+                    <div key={i} className={`flex items-center justify-between px-5 py-3.5 text-sm ${i % 2 === 0 ? 'bg-muted/30' : 'bg-background'}`}>
+                      <span className="text-muted-foreground font-medium">{spec.label}</span>
+                      <span className="text-foreground font-bold text-right max-w-[55%]">{spec.value}</span>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div className="mb-10 relative overflow-hidden flex items-center bg-muted/30 border border-border/50 rounded-2xl p-6 max-w-xl">
-                  <span className="absolute -right-4 top-1/2 -translate-y-1/2 text-8xl font-black text-muted/30 select-none pointer-events-none whitespace-nowrap tracking-tighter">QUOTE</span>
-                  <div className="relative z-10 space-y-2">
-                    <p className="font-bold text-foreground text-lg">Interested in this product?</p>
-                    <p className="text-sm text-muted-foreground mb-4">Request a personalized quote and technical specifications sheet.</p>
-                  </div>
-                </div>
+                <p className="text-muted-foreground italic text-sm">No specifications listed for this product.</p>
               )}
-
-              <div className="flex flex-col sm:flex-row gap-4 mb-10">
-                <Button
-                  variant={isInCart ? 'outline' : 'accent'}
-                  size="lg"
-                  className={`flex-1 flex items-center justify-center gap-3 h-14 text-base font-bold rounded-2xl transition-all shadow-md active:scale-95 ${isInCart ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10' : ''}`}
-                  onClick={() => {
-                    if (isInCart) {
-                      setIsOpen(true);
-                    } else if (product.id) {
-                      const itemName = selectedVariant ? `${product.name} — ${selectedVariant.name}` : product.name;
-                      const itemModel = selectedVariant?.model || product.model;
-                      addItem({ id: product.id + (selectedVariant ? `-${selectedVariant.id}` : ''), name: itemName, brand: product.brand, category: product.category, model: itemModel, image: product.image });
-                      toast.success('Added to quote cart!');
-                    }
-                  }}
-                >
-                  {isInCart ? <><CheckCircle2 className="h-5 w-5" /> View in Quote Cart</> : <><Plus className="h-5 w-5" /> Add to Quote</>}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="flex-1 h-14 text-base font-bold rounded-2xl gap-2 active:scale-95 shadow-sm disabled:opacity-50"
-                  disabled={!(selectedVariant?.specSheetUrl || product.specSheetUrl)}
-                  onClick={() => { const url = selectedVariant?.specSheetUrl || product.specSheetUrl; url && window.open(url, '_blank'); }}
-                >
-                  <Download className="h-5 w-5" /> Technical Spec
-                </Button>
-              </div>
             </div>
+          )}
 
-            {/* Quick Specs */}
-            <div className="bg-muted/40 rounded-3xl p-8 border">
-              <h3 className="text-sm font-black uppercase tracking-widest text-foreground mb-6">Product Specifications</h3>
-              <div className="grid gap-4">
-                {(product.specifications ?? []).slice(0, 6).map((spec, i) => (
-                  <div key={i} className="flex items-center justify-between border-b border-border/50 pb-3 last:border-0 last:pb-0">
-                    <span className="text-sm text-muted-foreground font-medium">{spec.label}</span>
-                    <span className="text-sm text-foreground font-bold">{spec.value}</span>
-                  </div>
-                ))}
-              </div>
+          {activeTab === 'applications' && (
+            <div>
+              {(product.applications ?? []).length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {product.applications!.map((a, i) => (
+                    <span key={i} className="bg-primary/5 text-primary border border-primary/15 text-sm font-semibold px-4 py-2 rounded-xl flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" /> {a}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground italic text-sm">No applications listed for this product.</p>
+              )}
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Details & Features Tabs */}
-        <div className="mt-20 lg:mt-32 space-y-20 lg:space-y-32">
-          {/* Main Content */}
-          <div className="grid lg:grid-cols-5 gap-10 lg:gap-20">
-            <div className="lg:col-span-3">
-              <h2 className="text-2xl lg:text-3xl font-black text-foreground mb-6 relative">
-                Product Overview
-                <span className="absolute -bottom-2 left-0 w-12 h-1.5 bg-primary rounded-full" />
-              </h2>
-              <div className="prose prose-sm lg:prose-base max-w-none text-muted-foreground leading-relaxed whitespace-pre-line bg-card border rounded-3xl p-8 lg:p-10 shadow-sm">
-                {product.fullDescription}
-              </div>
+        {/* Related Products */}
+        {relatedProducts.length > 0 && (
+          <div className="border-t pt-12 pb-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-black text-foreground">Related Products</h2>
+              <Link to="/products" className="text-sm font-bold text-primary hover:underline flex items-center gap-1">
+                View All <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
-
-            <div className="lg:col-span-2 space-y-12">
-              <div>
-                <h3 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-                  <div className="h-8 w-1 bg-accent rounded-full" /> Key Features
-                </h3>
-                <ul className="grid gap-4">
-                  {(product.features ?? []).map((f, i) => (
-                    <li key={i} className="flex items-start gap-4 text-muted-foreground bg-card border rounded-2xl p-4 shadow-sm hover:border-accent/40 transition-colors">
-                      <CheckCircle2 className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-                      <span className="text-sm lg:text-base font-medium leading-normal">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-                  <div className="h-8 w-1 bg-primary rounded-full" /> Ideal Applications
-                </h3>
-                <ul className="flex flex-wrap gap-2">
-                  {(product.applications ?? []).map((a, i) => (
-                    <li key={i} className="bg-primary/5 text-primary text-sm font-bold px-4 py-2 rounded-xl border border-primary/10 flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary" /> {a}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Related Products */}
-          {relatedProducts.length > 0 && (
-            <div className="mb-20">
-              <div className="flex items-center justify-between mb-10">
-                <h2 className="text-2xl lg:text-3xl font-black text-foreground">You May Also Like</h2>
-                <Link to="/products" className="text-sm font-bold text-primary hover:underline flex items-center gap-1">
-                  View All Products <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {relatedProducts.map(rp => {
-                  const inCartRel = items.some(i => i.id === rp.id);
-                  return (
-                    <div key={rp.id} className="bg-card rounded-2xl border overflow-hidden card-hover group flex flex-col h-full shadow-sm hover:shadow-xl transition-all">
-                      <Link to={`/product/${rp.slug}`} className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center shrink-0">
-                        {rp.image ? (
-                          <img src={rp.image} alt={rp.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                        ) : (
-                          <FlaskConical className="h-14 w-14 text-primary/20 transition-transform duration-500 group-hover:scale-110" />
-                        )}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {relatedProducts.map(rp => {
+                const rpInCart = items.some(i => i.id === rp.id);
+                return (
+                  <div key={rp.id} className="bg-card rounded-2xl border overflow-hidden group flex flex-col hover:shadow-lg transition-all">
+                    <Link to={`/product/${rp.slug}`} className="aspect-square bg-white flex items-center justify-center overflow-hidden p-3">
+                      {rp.image ? (
+                        <img src={rp.image} alt={rp.name} className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" />
+                      ) : (
+                        <FlaskConical className="h-12 w-12 text-primary/20" />
+                      )}
+                    </Link>
+                    <div className="p-4 flex flex-col flex-1">
+                      <p className="text-[10px] text-accent font-bold uppercase tracking-wider mb-1">{rp.brand}</p>
+                      <Link to={`/product/${rp.slug}`}>
+                        <h4 className="text-sm font-bold text-foreground line-clamp-2 hover:text-primary transition-colors mb-3">{rp.name}</h4>
                       </Link>
-                      <div className="p-5 flex flex-col flex-1">
-                        <div className="mb-auto">
-                          <p className="text-xs text-accent font-bold mb-1 uppercase tracking-tight">{rp.brand}</p>
-                          <Link to={`/product/${rp.slug}`}>
-                            <h4 className="font-bold text-foreground mb-2 line-clamp-2 hover:text-primary transition-colors text-sm">{rp.name}</h4>
-                          </Link>
-                        </div>
-                        <div className="flex gap-2 pt-4 border-t border-border/50">
-                          <Button
-                            variant={inCartRel ? 'outline' : 'accent'}
-                            size="sm"
-                            className={`flex-1 text-[10px] font-bold h-9 rounded-xl flex items-center justify-center gap-2 ${inCartRel ? 'bg-primary/5 border-primary text-primary' : ''}`}
-                            onClick={() => {
-                              if (!inCartRel && rp.id) {
-                                addItem({ id: rp.id, name: rp.name, brand: rp.brand, category: rp.category, model: rp.model, image: rp.image });
-                                toast.success('Added to quote cart!');
-                              }
-                            }}
-                          >
-                            {inCartRel ? <><CheckCircle2 className="h-3 w-3" /> In Cart</> : <><Plus className="h-3 w-3" /> Add Quote</>}
-                          </Button>
-                        </div>
+                      <div className="mt-auto">
+                        <Button
+                          variant={rpInCart ? 'outline' : 'accent'}
+                          size="sm"
+                          className="w-full text-xs h-8 rounded-lg"
+                          onClick={() => {
+                            if (!rpInCart && rp.id) {
+                              addItem({ id: rp.id, name: rp.name, brand: rp.brand, category: rp.category, model: rp.model, image: rp.image });
+                              toast.success('Added to quote cart!');
+                            }
+                          }}
+                        >
+                          {rpInCart ? <><CheckCircle2 className="h-3 w-3 mr-1" /> In Cart</> : <><Plus className="h-3 w-3 mr-1" /> Add Quote</>}
+                        </Button>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Speak to an Expert Block */}
-          {!product.isFlashSale && (
-            <div className="glass-panel glass-glow rounded-3xl p-8 lg:p-12 border-primary/20 bg-primary/5 mt-20 relative overflow-hidden">
-              <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
-              
-              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 py-4">
-                <div className="max-w-xl text-center md:text-left">
-                  <h3 className="text-2xl font-black text-foreground mb-3 tracking-tight">Need specialized guidance?</h3>
-                  <p className="text-muted-foreground leading-relaxed">Our clinical product experts are available to discuss technical specifications, customized pricing, and large-scale deployment options directly with you.</p>
-                </div>
-                
-                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto shrink-0 justify-center">
-                  <div className="flex flex-col gap-1 items-center md:items-end justify-center px-6 border-r border-border/50 pr-8">
-                    <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Call Direct</span>
-                    <a href={`tel:${settings?.phone || ''}`} className="text-xl font-black text-foreground hover:text-primary transition-colors">
-                      {settings?.phone || '+94 112 345 678'}
-                    </a>
                   </div>
-                  {settings?.phone && (
-                    <a
-                      href={`https://wa.me/${settings.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in the ${product.name} (${product.model}). Can an expert assist me?`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#128C7E] text-white px-8 py-4 rounded-2xl font-bold font-sans shadow-lg shadow-[#25D366]/20 transition-all hover:scale-105 active:scale-95"
-                    >
-                      Speak on WhatsApp
-                    </a>
-                  )}
-                </div>
-              </div>
+                );
+              })}
             </div>
-          )}
-
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
