@@ -61,7 +61,8 @@ const AdminCategories = () => {
       setOpen(false);
       setEditingId(null);
       setFormData(initialForm);
-    } catch {
+    } catch (error) {
+      console.error("Update failed with error:", error);
       toast.error(editingId ? 'Failed to update category' : 'Failed to create category');
     } finally {
       setSaving(false);

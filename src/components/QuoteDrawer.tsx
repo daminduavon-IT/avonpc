@@ -74,7 +74,10 @@ const QuoteDrawer = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground leading-tight line-clamp-2">{item.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{item.brand} · {item.model}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {item.brand} {item.model ? `· ${item.model}` : ''} 
+                          {item.variantLabel ? ` · ${item.variantLabel}` : ''}
+                        </p>
                       </div>
                     </div>
 

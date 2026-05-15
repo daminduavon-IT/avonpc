@@ -11,10 +11,17 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+<<<<<<< HEAD
     "@supabase/supabase-js": "^2.105.4",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "nodemailer": "^8.0.2"
+=======
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "nodemailer": "^8.0.4"
+>>>>>>> 36e37e5f0bfcfa43a2629cd8cf541e8cab925615
   }
 }
