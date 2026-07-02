@@ -1,23 +1,20 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+// ============================================================================
+// Firebase client — REMOVED after the Supabase migration.
+//
+// The app now uses src/lib/supabase.ts + supabase-services.ts. This stub remains
+// only to make any stray `@/lib/firebase` import fail loudly instead of silently
+// initializing a second backend. Firebase the PROJECT stays live in parallel per
+// the cutover plan, but the app no longer connects to it.
+// ============================================================================
 
-// ⚠️ REPLACE these with your real Firebase config from Firebase Console
-// Go to: Firebase Console → Project Settings → General → Your apps → Firebase SDK snippet
-const firebaseConfig = {
-  apiKey: "AIzaSyBhYzrRLxAqiB0Q7aJzaYd4kMnx7CH6-lw",
-  authDomain: "avonpclova.firebaseapp.com",
-  projectId: "avonpclova",
-  storageBucket: "avonpclova.firebasestorage.app",
-  messagingSenderId: "331507830978",
-  appId: "1:331507830978:web:9e3ed572e014aed943ab5b",
-  measurementId: "G-NXQ8HQJS39"
+const removed = () => {
+  throw new Error(
+    '@/lib/firebase has been removed. The app migrated to Supabase — import from ' +
+    '@/lib/supabase or @/lib/supabase-services instead.'
+  );
 };
 
-const app = initializeApp(firebaseConfig);
-
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export default app;
+export const auth = new Proxy({}, { get: removed }) as never;
+export const db = new Proxy({}, { get: removed }) as never;
+export const storage = new Proxy({}, { get: removed }) as never;
+export default new Proxy({}, { get: removed });

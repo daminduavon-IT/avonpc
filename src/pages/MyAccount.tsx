@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, FileText, Clock, Settings, LogOut, ChevronRight, Package, Calendar, Loader2, MapPin, Building2, Mail, Phone, CheckCircle2 } from 'lucide-react';
@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useAuth } from '@/context/AuthContext';
 import { useQuote } from '@/context/QuoteContext';
 import { getUserQuotes, QuoteRequest } from '@/lib/firestore-services';
+import { toDateSafe } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,17 +37,11 @@ const MyAccount = () => {
     }
   }, [profile]);
 
-  useEffect(() => {
-    if (user && activeTab === 'quotes') {
-      fetchQuotes();
-    }
-  }, [user, activeTab]);
-
-  const fetchQuotes = async () => {
+  const fetchQuotes = useCallback(async () => {
     if (!user) return;
     setLoadingQuotes(true);
     try {
-      const data = await getUserQuotes(user.uid);
+      const data = await getUserQuotes(user.id);
       setQuotes(data);
     } catch (err) {
       console.error('Error loading quotes:', err);
@@ -54,7 +49,13 @@ const MyAccount = () => {
     } finally {
       setLoadingQuotes(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user && activeTab === 'quotes') {
+      fetchQuotes();
+    }
+  }, [user, activeTab, fetchQuotes]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,7 +248,7 @@ const MyAccount = () => {
                             <td className="py-4 px-6">
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                                {quote.createdAt?.toDate().toLocaleDateString() || 'N/A'}
+                                {toDateSafe(quote.createdAt)?.toLocaleDateString() || 'N/A'}
                               </div>
                             </td>
                             <td className="py-4 px-6 font-medium">
@@ -302,7 +303,7 @@ const MyAccount = () => {
                     </div>
                     <h4 className="font-semibold text-lg mb-1">Your cart is empty</h4>
                     <p className="text-muted-foreground mb-6">Add products to your quote list to see them here.</p>
-                    <Link to="/cart"><Button>Go to Quote Cart</Button></Link>
+                    <Link to="/request-quote"><Button>Go to Quote Cart</Button></Link>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -323,7 +324,7 @@ const MyAccount = () => {
                         <p className="font-bold text-lg">Ready to request a quote?</p>
                         <p className="text-sm text-muted-foreground">You have {cartItems.length} items ready for submission.</p>
                       </div>
-                      <Link to="/cart"><Button className="w-full sm:w-auto">Submit Quote Request</Button></Link>
+                      <Link to="/request-quote"><Button className="w-full sm:w-auto">Submit Quote Request</Button></Link>
                     </div>
                   </div>
                 )}
@@ -374,7 +375,7 @@ const MyAccount = () => {
                     </div>
                   </div>
                   <div className="pt-4 border-t flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">Member since: {profile?.createdAt?.toDate().toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">Member since: {toDateSafe(profile?.createdAt)?.toLocaleDateString() || 'N/A'}</p>
                     <Button type="submit" disabled={savingProfile}>
                       {savingProfile ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Settings className="h-4 w-4 mr-2" />}
                       Save Changes
@@ -415,7 +416,7 @@ const MyAccount = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Submitted On</p>
-                  <p className="font-medium">{selectedQuote.createdAt?.toDate().toLocaleString()}</p>
+                  <p className="font-medium">{toDateSafe(selectedQuote.createdAt)?.toLocaleString() || 'N/A'}</p>
                 </div>
               </div>
 

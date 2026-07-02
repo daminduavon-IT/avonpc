@@ -12,6 +12,37 @@ dist
 dist-ssr
 *.local
 
+# Environment / secrets
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+
+# Migration secrets — NEVER commit these (Firebase admin key, service_role key)
+firebase-service.json
+**/firebase-service.json
+supabase-service.json
+.secrets/
+migration/.secrets/
+
+# Migration DATA & mappings — contain customer PII / provenance, never commit
+migration/firestore-export/
+migration/supabase-rows/
+migration/auth-uid-map.json
+migration/node_modules/
+
+# Phase 3 auth secrets & exports — user emails, password hashes, scrypt keys
+migration/auth/firebase-users.json
+migration/auth/users.json
+migration/auth/local.env.sh
+**/local.env.sh
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

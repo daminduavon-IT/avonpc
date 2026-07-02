@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
 import {
@@ -36,13 +36,17 @@ const RequestQuote = () => {
     bankSlipUrl: ''
   });
 
-  // Calculate Subtotals
+  // Calculate Subtotals. Items without a price contribute 0 but are tracked
+  // so we can flag the total as indicative rather than showing a misleadingly
+  // low "Grand Total".
   const calculateTotal = () => {
     return items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
   };
   const cartTotal = calculateTotal();
+  const hasUnpricedItems = items.some(item => item.price === undefined || item.price === null);
 
-  useState(() => {
+  // Prefill from profile once it resolves (auth loads asynchronously).
+  useEffect(() => {
     if (profile) {
       setForm(prev => ({
         ...prev,
@@ -52,7 +56,7 @@ const RequestQuote = () => {
         phone: profile.phone || prev.phone
       }));
     }
-  });
+  }, [profile]);
 
   const handleBankSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -101,7 +105,7 @@ const RequestQuote = () => {
         message: form.message,
         logisticsType: form.logisticsType,
         bankSlipUrl: form.bankSlipUrl,
-        userId: user?.uid,
+        userId: user?.id,
         products: items.map(item => ({
           id: item.productId,
           name: item.name,
@@ -114,10 +118,14 @@ const RequestQuote = () => {
         })),
       });
       
-      // Dispatch Branded Email Confirmations via local microservice
+      // Dispatch Branded Email Confirmations via mailer microservice.
+      // The order is already saved in Firestore above, so an email failure
+      // must NOT block the order — but we surface it so the user isn't left
+      // expecting a confirmation that never arrives.
+      let emailDelivered = true;
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/quote';
-        await fetch(apiUrl, {
+        const res = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -134,8 +142,17 @@ const RequestQuote = () => {
             products: items
           })
         });
+        if (!res.ok) emailDelivered = false;
       } catch (err) {
+        emailDelivered = false;
         console.error('Email dispatch microservice offline or errored', err);
+      }
+
+      if (!emailDelivered) {
+        toast.warning(
+          'Order saved successfully, but the confirmation email could not be sent right now. Our team has your request and will follow up directly.',
+          { duration: 8000 }
+        );
       }
 
       clearCart();
@@ -323,6 +340,7 @@ const RequestQuote = () => {
                       </div>
                       <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
                         Est. Subtotal: <span className="text-2xl font-black text-foreground ml-2 tracking-tight">Rs. {cartTotal.toFixed(2)}</span>
+                        {hasUnpricedItems && <span className="block text-[10px] font-medium text-amber-600 normal-case tracking-normal mt-1">Some items are priced on request — final total confirmed by our team.</span>}
                       </div>
                     </div>
                   </div>
@@ -366,6 +384,7 @@ const RequestQuote = () => {
                    <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Est. Total</span>
                    <span className="font-black text-lg text-foreground">Rs. {cartTotal.toFixed(2)}</span>
                 </div>
+                {hasUnpricedItems && <p className="text-[10px] text-amber-600 mt-2 text-center">Some items are priced on request — final total confirmed by our team.</p>}
                 <button onClick={() => setStep(0)} className="text-[11px] font-bold text-muted-foreground hover:text-foreground mt-4 block uppercase tracking-widest transition-colors"><ArrowRight className="w-3 h-3 inline rotate-180 mr-1"/> Edit Selection</button>
               </div>
 
@@ -551,8 +570,13 @@ const RequestQuote = () => {
                  {/* Final Totals & Submit */}
                  <div className="border-t pt-8 mt-8 flex flex-col items-center">
                     <div className="text-center mb-6">
-                       <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-1">Grand Total</p>
+                       <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-1">Estimated Total</p>
                        <p className="text-4xl font-black text-foreground tracking-tight">Rs. {cartTotal.toFixed(2)}</p>
+                       <p className="text-[11px] text-muted-foreground mt-2">
+                         {hasUnpricedItems
+                           ? 'Indicative only — some items are priced on request. Final quotation confirmed by our team.'
+                           : 'Indicative estimate — final quotation confirmed by our team.'}
+                       </p>
                     </div>
                     <Button
                       onClick={handleSubmit}

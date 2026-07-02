@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import QuoteDrawer from "@/components/QuoteDrawer";
 import AdminLayout from "@/components/AdminLayout";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -54,6 +55,7 @@ const WebsiteLayout = ({ children }: { children: React.ReactNode }) => (
 );
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner />
@@ -103,6 +105,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

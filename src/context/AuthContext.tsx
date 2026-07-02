@@ -1,15 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import {
-  User,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  updateProfile,
-  sendPasswordResetEmail,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import type { User } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 interface UserProfile {
   uid: string;
@@ -41,76 +32,96 @@ export const useAuth = () => {
   return ctx;
 };
 
+// Map a profiles row -> the app's UserProfile shape (unchanged surface).
+function rowToProfile(row: any): UserProfile {
+  return {
+    uid: row.id,
+    email: row.email ?? '',
+    displayName: row.display_name ?? '',
+    company: row.company ?? '',
+    phone: row.phone ?? '',
+    role: row.role === 'admin' ? 'admin' : 'customer',
+    createdAt: row.created_at ?? null,
+  };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const loadProfile = async (uid: string) => {
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle();
+      if (error) throw error;
+      setProfile(data ? rowToProfile(data) : null);
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setProfile(null);
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        if (firebaseUser.email === 'admin@avonpc.com') {
-          // Hardcode admin profile for this specific user
-          setProfile({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: 'System Admin',
-            company: 'Avon Pharmo Chem',
-            phone: '',
-            role: 'admin',
-            createdAt: new Date(),
-          });
-        } else {
-          try {
-            const profileDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-            if (profileDoc.exists()) {
-              setProfile(profileDoc.data() as UserProfile);
-            }
-          } catch (err) {
-            console.error('Error fetching profile:', err);
-          }
-        }
-      } else {
-        setProfile(null);
-      }
+    // Initial session, then subscribe to auth changes.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) await loadProfile(session.user.id);
       setLoading(false);
     });
-    return unsubscribe;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) await loadProfile(session.user.id);
+      else setProfile(null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   };
 
   const register = async (email: string, password: string, name: string, company: string) => {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(cred.user, { displayName: name });
-    const userProfile: UserProfile = {
-      uid: cred.user.uid,
+    const { data, error } = await supabase.auth.signUp({
       email,
-      displayName: name,
-      company,
-      phone: '',
-      role: 'customer',
-      createdAt: serverTimestamp(),
-    };
-    await setDoc(doc(db, 'users', cred.user.uid), userProfile);
-    setProfile(userProfile);
+      password,
+      options: { data: { display_name: name } },
+    });
+    if (error) throw error;
+    // The handle_new_user trigger creates the base profile (role forced to
+    // 'customer'). Enrich it with company + display_name if we have a session.
+    const uid = data.user?.id;
+    if (uid) {
+      await supabase.from('profiles').update({ display_name: name, company }).eq('id', uid);
+      await loadProfile(uid);
+    }
   };
 
   const logout = async () => {
-    await signOut(auth);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
     setProfile(null);
   };
 
   const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+    if (error) throw error;
   };
 
+  // NOTE: role is intentionally NOT updatable here — RLS blocks it client-side.
   const updateProfileData = async (data: Partial<UserProfile>) => {
     if (!user) return;
-    await setDoc(doc(db, 'users', user.uid), data, { merge: true });
+    const patch: Record<string, unknown> = {};
+    if (data.displayName !== undefined) patch.display_name = data.displayName;
+    if (data.company !== undefined) patch.company = data.company;
+    if (data.phone !== undefined) patch.phone = data.phone;
+    const { error } = await supabase.from('profiles').update(patch).eq('id', user.id);
+    if (error) throw error;
     setProfile(prev => prev ? { ...prev, ...data } : null);
   };
 

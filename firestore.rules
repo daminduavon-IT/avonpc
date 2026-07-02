@@ -1,0 +1,81 @@
+rules_version = '2';
+
+// Avon Pharmo Chem — Firestore security rules.
+//
+// Deploy with the Firebase CLI:
+//   firebase deploy --only firestore:rules
+//
+// Admin access is decided by the caller's own users/{uid} document having
+// role == 'admin'. Set that field manually in the Firebase console for the
+// admin account (see DEPLOY_CHECKLIST.md) — there is no longer a hardcoded
+// admin email in the client.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Is the request from a signed-in user whose profile marks them admin?
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ── Public catalog: anyone may read, only admins may write ──────────
+    match /products/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /categories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /brands/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /industries/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ── Site settings: public read, admin write ─────────────────────────
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ── User profiles: a user reads/writes only their own doc; admin all.
+    // A user must NOT be able to grant themselves the admin role.
+    match /users/{uid} {
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.role == 'customer';
+      allow update: if isAdmin() || (
+        request.auth != null && request.auth.uid == uid
+        // block privilege escalation: role can't change to admin via self-update
+        && request.resource.data.role == resource.data.role
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ── Quotes: anyone may create (public RFQ); reads/updates admin-only.
+    // A signed-in user may read their own quotes (userId == their uid).
+    match /quotes/{id} {
+      allow create: if true;
+      allow read: if isAdmin() ||
+        (request.auth != null && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Contact inquiries: create-only for the public; admin reads. ─────
+    match /inquiries/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Default deny for anything not matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "avonpc-migration",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Firestore -> Supabase data migration tooling (run locally with your own credentials).",
+  "scripts": {
+    "export": "node 1-export.mjs",
+    "transform": "node 2-transform.mjs",
+    "load": "node 3-load.mjs",
+    "verify": "node 4-verify.mjs",
+    "all": "node 1-export.mjs && node 2-transform.mjs && node 3-load.mjs && node 4-verify.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "firebase-admin": "^12.4.0"
+  }
+}
