@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { submitQuote } from '@/lib/firestore-services';
+import { submitQuote } from '@/lib/supabase-services';
 import { uploadToCloudinary } from '@/lib/cloudinary-services';
 
 import { useAuth } from '@/context/AuthContext';

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getSettings, WebsiteSettings } from '@/lib/firestore-services';
+import { getSettings, WebsiteSettings } from '@/lib/supabase-services';
 
 interface SettingsContextType {
     settings: WebsiteSettings | null;

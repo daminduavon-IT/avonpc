@@ -5,7 +5,7 @@ import { User, FileText, Clock, Settings, LogOut, ChevronRight, Package, Calenda
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/context/AuthContext';
 import { useQuote } from '@/context/QuoteContext';
-import { getUserQuotes, QuoteRequest } from '@/lib/firestore-services';
+import { getUserQuotes, QuoteRequest } from '@/lib/supabase-services';
 import { toDateSafe } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
