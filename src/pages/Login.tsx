@@ -5,6 +5,8 @@ import avonLogo from '@/assets/avon-logo.png';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
+const isSafeRedirect = (path: string) => path.startsWith('/') && !path.startsWith('//');
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,9 +22,9 @@ const Login = () => {
     try {
       await login(email, password);
       toast.success('Logged in successfully!');
-      if (email === 'admin@avonpc.com') {
+      if (email === 'avonpcit@gmail.com') {
         navigate('/admin');
-      } else if (redirect) {
+      } else if (redirect && isSafeRedirect(redirect)) {
         navigate(redirect);
       } else {
         navigate('/my-account');

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Globe, Edit, Save, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getSiteContent, updateSiteContent } from '@/lib/supabase-services';
+import { getContentSettings, updateContentSettings } from '@/lib/supabase-services';
 import { toast } from 'sonner';
 
 const sections = [
@@ -20,17 +20,10 @@ const AdminContent = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const map = await getSiteContent();
-        setContentMap(map);
-      } catch (err) {
-        toast.error('Failed to load content');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    getContentSettings()
+      .then(setContentMap)
+      .catch(() => toast.error('Failed to load content'))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleEdit = (key: string) => {
@@ -43,7 +36,7 @@ const AdminContent = () => {
     setSaving(true);
     try {
       const newMap = { ...contentMap, [editingKey]: editText };
-      await updateSiteContent(newMap);
+      await updateContentSettings(newMap);
       setContentMap(newMap);
       toast.success('Content updated successfully');
       setEditingKey(null);

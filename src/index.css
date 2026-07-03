@@ -81,4 +81,52 @@
   .btn-transition {
     @apply transition-all duration-150;
   }
+
+  /* High-End Overhaul Utilities */
+  .glass-panel {
+    @apply bg-white/60 backdrop-blur-xl border border-white/50 shadow-2xl;
+  }
+  .dark .glass-panel {
+    @apply bg-black/40 border-white/10;
+  }
+
+  .gold-gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 font-black;
+  }
+
+  .glass-glow {
+    @apply shadow-[0_0_25px_rgba(245,158,11,0.25)] border-[rgba(245,158,11,0.4)];
+  }
+
+  .shimmer-bg {
+    @apply relative overflow-hidden;
+  }
+  
+  .shimmer-bg::after {
+    content: '';
+    @apply absolute top-0 -left-[100%] w-1/2 h-full z-10 transform -skew-x-[25deg] bg-gradient-to-r from-transparent via-white/30 to-transparent;
+    animation: shimmer 2.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    left: 200%;
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

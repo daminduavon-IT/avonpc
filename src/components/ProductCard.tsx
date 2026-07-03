@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
-import { FirestoreProduct } from '@/lib/firestore-services';
+import { FirestoreProduct } from '@/lib/supabase-services';
 import { FlaskConical, CheckCircle2, Plus, PackageOpen, Tag } from 'lucide-react';
 
 interface ProductCardProps {

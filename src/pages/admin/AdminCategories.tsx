@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, Loader2, ImagePlus } from 'lucide-react';
-import { getCategories, deleteCategory, addCategory, updateCategory, FirestoreCategory } from '@/lib/firestore-services';
+import { getCategories, deleteCategory, addCategory, updateCategory, FirestoreCategory } from '@/lib/supabase-services';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { uploadToCloudinary } from '@/lib/cloudinary-services';
+import { uploadToSupabase } from '@/lib/supabase-services';
 import { toast } from 'sonner';
 
 const AdminCategories = () => {
@@ -38,7 +38,7 @@ const AdminCategories = () => {
     if (!file) return;
     setImgUploading(true);
     try {
-      const url = await uploadToCloudinary(file);
+      const url = await uploadToSupabase(file, 'categories');
       setFormData(p => ({ ...p, image: url }));
       toast.success('Image uploaded!');
     } catch { toast.error('Upload failed'); }

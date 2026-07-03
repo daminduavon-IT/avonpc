@@ -624,6 +624,74 @@ export const updateSiteContent = async (contentMap: Record<string, string>) => {
   if (error) throw error;
 };
 
+// ─── Aliases / functions the (new) UI expects ────────────────────────────────
+// The reworked UI calls these names; map them onto our schema so the new pages
+// work against our real database without changing the DB.
+
+// Content settings == our site_content CMS map.
+export const getContentSettings = getSiteContent;
+export const updateContentSettings = updateSiteContent;
+
+// Communication settings (e.g. notification email). Stored in site_content under
+// a reserved key so we don't need a schema change; kept separate from CMS text.
+export interface CommunicationSettings {
+  notificationEmail: string;
+}
+const COMM_KEY = '__communications__';
+
+export const getCommunicationSettings = async (): Promise<CommunicationSettings> => {
+  const defaults: CommunicationSettings = { notificationEmail: 'avonpcit@gmail.com' };
+  const map = await getSiteContent();
+  const raw = map[COMM_KEY];
+  if (!raw) return defaults;
+  try { return { ...defaults, ...JSON.parse(raw) }; } catch { return defaults; }
+};
+
+export const updateCommunicationSettings = async (settings: Partial<CommunicationSettings>) => {
+  const map = await getSiteContent();
+  const current = map[COMM_KEY] ? JSON.parse(map[COMM_KEY]) : {};
+  map[COMM_KEY] = JSON.stringify({ ...current, ...settings });
+  await updateSiteContent(map);
+};
+
+// Patch arbitrary quote fields (new UI's generic editor). Maps camelCase ->
+// snake_case for the columns the UI edits.
+export const updateQuoteField = async (id: string, data: Partial<QuoteRequest>) => {
+  const patch: Record<string, unknown> = {};
+  if (data.status !== undefined) patch.status = data.status;
+  if (data.internalNotes !== undefined) patch.internal_notes = data.internalNotes;
+  if (data.assignedTo !== undefined) patch.assigned_to = data.assignedTo;
+  if (data.logisticsType !== undefined) patch.logistics_type = data.logisticsType;
+  if (data.bankSlipUrl !== undefined) patch.bank_slip_url = data.bankSlipUrl;
+  const { error } = await supabase.from('quotes').update(patch).eq('id', id);
+  if (error) throw error;
+};
+
+export const deleteInquiry = async (id: string) => {
+  const { error } = await supabase.from('inquiries').delete().eq('id', id);
+  if (error) throw error;
+};
+
+// Upload a file to the Supabase 'media' bucket under a folder, unique name.
+export const uploadToSupabase = async (file: File, folder: string): Promise<string> => {
+  const ext = file.name.split('.').pop();
+  const uniqueName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from('media').upload(uniqueName, file, { upsert: false });
+  if (error) throw error;
+  const { data } = supabase.storage.from('media').getPublicUrl(uniqueName);
+  return data.publicUrl;
+};
+
+export const listFiles = async (folder: string): Promise<{ name: string; url: string }[]> => {
+  const { data, error } = await supabase.storage.from('media')
+    .list(folder, { sortBy: { column: 'created_at', order: 'desc' } });
+  if (error) throw error;
+  return (data ?? []).map(f => ({
+    name: f.name,
+    url: supabase.storage.from('media').getPublicUrl(`${folder}/${f.name}`).data.publicUrl,
+  }));
+};
+
 // ─── Dashboard Stats ─────────────────────────────────────────────────────────
 
 export const getDashboardStats = async () => {

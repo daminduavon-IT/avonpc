@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Mail, Loader2, MessageSquare, Calendar, User, Phone, Building2, Trash2 } from 'lucide-react';
-import { getInquiries, ContactInquiry } from '@/lib/firestore-services';
+import { getInquiries, deleteInquiry, ContactInquiry } from '@/lib/supabase-services';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -9,6 +9,7 @@ const AdminInquiries = () => {
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInquiry, setSelectedInquiry] = useState<ContactInquiry | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -23,6 +24,21 @@ const AdminInquiries = () => {
     };
     load();
   }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this inquiry? This cannot be undone.')) return;
+    setDeleting(true);
+    try {
+      await deleteInquiry(id);
+      setInquiries(prev => prev.filter(i => i.id !== id));
+      setSelectedInquiry(null);
+      toast.success('Inquiry deleted.');
+    } catch {
+      toast.error('Failed to delete inquiry.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -55,7 +71,7 @@ const AdminInquiries = () => {
                     <div className="flex justify-between items-start mb-1">
                       <span className="font-bold text-sm text-foreground truncate mr-2">{iq.name}</span>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                        {iq.createdAt?.toDate ? format(iq.createdAt.toDate(), 'MMM d') : 'Recent'}
+                        {iq.createdAt ? format(new Date(iq.createdAt), 'MMM d') : 'Recent'}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-1 mb-1">{iq.company || 'Private Individual'}</p>
@@ -119,7 +135,7 @@ const AdminInquiries = () => {
                       <div>
                         <p className="text-[10px] uppercase font-bold text-muted-foreground">Submitted On</p>
                         <p className="text-sm font-medium">
-                          {selectedInquiry.createdAt?.toDate ? format(selectedInquiry.createdAt.toDate(), 'PPP p') : 'Recent'}
+                          {selectedInquiry.createdAt ? format(new Date(selectedInquiry.createdAt), 'PPP p') : 'Recent'}
                         </p>
                       </div>
                     </div>
@@ -138,8 +154,14 @@ const AdminInquiries = () => {
               </div>
 
               <div className="p-4 bg-muted/50 border-t flex justify-end">
-                <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete Inquiry (Archive)
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10"
+                  disabled={deleting}
+                  onClick={() => selectedInquiry?.id && handleDelete(selectedInquiry.id)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" /> {deleting ? 'Deleting...' : 'Delete Inquiry'}
                 </Button>
               </div>
             </div>

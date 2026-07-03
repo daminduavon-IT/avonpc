@@ -9,7 +9,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import QuoteDrawer from "@/components/QuoteDrawer";
 import AdminLayout from "@/components/AdminLayout";
-import ErrorBoundary from "@/components/ErrorBoundary";
 
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -55,14 +54,13 @@ const WebsiteLayout = ({ children }: { children: React.ReactNode }) => (
 );
 
 const App = () => (
-  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner />
       <AuthProvider>
         <SettingsProvider>
           <QuoteProvider>
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <Routes>
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminLayout />}>
@@ -85,6 +83,7 @@ const App = () => (
                 <Route path="/about" element={<WebsiteLayout><About /></WebsiteLayout>} />
                 <Route path="/products" element={<WebsiteLayout><ProductListing /></WebsiteLayout>} />
                 <Route path="/products/:category" element={<WebsiteLayout><ProductListing /></WebsiteLayout>} />
+                <Route path="/flash-sale" element={<WebsiteLayout><ProductListing /></WebsiteLayout>} />
                 <Route path="/product/:slug" element={<WebsiteLayout><ProductDetail /></WebsiteLayout>} />
                 <Route path="/brands" element={<WebsiteLayout><Brands /></WebsiteLayout>} />
                 <Route path="/industries" element={<WebsiteLayout><Industries /></WebsiteLayout>} />
@@ -105,7 +104,6 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
-  </ErrorBoundary>
 );
 
 export default App;

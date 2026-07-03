@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, Loader2, ImagePlus } from 'lucide-react';
-import { getBrands, deleteBrand, addBrand, updateBrand, FirestoreBrand } from '@/lib/firestore-services';
+import { getBrands, deleteBrand, addBrand, updateBrand, FirestoreBrand } from '@/lib/supabase-services';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { uploadToCloudinary } from '@/lib/cloudinary-services';
+import { uploadToSupabase } from '@/lib/supabase-services';
 import { toast } from 'sonner';
 
 const AdminBrands = () => {
@@ -38,7 +38,7 @@ const AdminBrands = () => {
     if (!file) return;
     setImgUploading(true);
     try {
-      const url = await uploadToCloudinary(file);
+      const url = await uploadToSupabase(file, 'brands');
       setFormData(p => ({ ...p, logo: url }));
       toast.success('Logo uploaded!');
     } catch { toast.error('Upload failed'); }

@@ -6,7 +6,7 @@ const strengths = [
   'ISO 9001:2015 Compliant Processes',
   '30+ Years of Industry Experience',
   '5000+ Products in Catalog',
-  'Pan-India Distribution Network',
+  'Island-Wide Distribution Network',
   'Dedicated Technical Support',
   'Competitive Pricing',
 ];
@@ -31,11 +31,11 @@ const About = () => (
           <p className="text-muted-foreground leading-relaxed mb-4">
             Avon Pharmo Chem Pvt Ltd is a leading supplier of laboratory equipment, scientific instruments,
             glassware, consumables, and safety equipment to pharmaceutical, research, educational, and industrial
-            sectors across India. With over three decades of experience, we are committed to delivering quality
+            sectors across Sri Lanka. With over three decades of experience, we are committed to delivering quality
             products and exceptional service.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Our extensive catalog features products from top global and Indian manufacturers, ensuring that
+            Our extensive catalog features products from top global manufacturers, ensuring that
             our clients have access to the best tools and equipment for their laboratories.
           </p>
         </div>
@@ -58,7 +58,7 @@ const About = () => (
             <Award className="h-10 w-10 text-accent mb-4" />
             <h3 className="text-xl font-bold text-foreground mb-3">Our Vision</h3>
             <p className="text-muted-foreground leading-relaxed">
-              To be India's most trusted and preferred supplier of laboratory and scientific products,
+              To be Sri Lanka's most trusted and preferred supplier of laboratory and scientific products,
               setting industry benchmarks in quality, innovation, and customer satisfaction.
             </p>
           </div>
@@ -89,7 +89,7 @@ const About = () => (
         {[
           { icon: Shield, title: 'Quality Assured', desc: 'Every product undergoes strict quality checks before dispatch.' },
           { icon: Users, title: 'Expert Team', desc: 'Our trained professionals help you choose the right products.' },
-          { icon: Award, title: 'Trusted Brand', desc: 'Serving 2000+ laboratories across India with trust and excellence.' },
+          { icon: Award, title: 'Trusted Brand', desc: 'Serving laboratories across Sri Lanka with trust and excellence.' },
         ].map((f, i) => (
           <div key={i} className="bg-card rounded-xl border p-6 card-hover">
             <f.icon className="h-8 w-8 text-primary mx-auto mb-3" />

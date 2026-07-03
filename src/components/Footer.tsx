@@ -53,16 +53,23 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Categories (Col Span 3) */}
+          {/* Quick Product Links (Col Span 3) */}
           <div className="lg:col-span-3">
             <h4 className="text-white font-black uppercase tracking-[0.15em] text-sm mb-6 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#ea7000]"></span> Categories
+              <span className="w-2 h-2 rounded-full bg-[#ea7000]"></span> Products
             </h4>
             <ul className="space-y-3">
-              {['Laboratory Glassware', 'Scientific Instruments', 'Healthcare Consumables', 'Molecular Biology', 'Industrial Safety', 'Cleanroom Supplies'].map(cat => (
-                <li key={cat}>
-                  <Link to={`/products?category=${encodeURIComponent(cat)}`} className="group flex items-center text-sm font-medium hover:text-[#ea7000] transition-colors">
-                    <ChevronRight className="h-3 w-3 mr-2 text-slate-600 group-hover:text-[#ea7000] transition-colors" /> {cat}
+              {[
+                { label: 'All Products', path: '/products' },
+                { label: 'Flash Sale', path: '/flash-sale' },
+                { label: 'Glassware', path: '/products/glassware' },
+                { label: 'Lab Instruments', path: '/products/laboratory-instruments' },
+                { label: 'Safety Equipment', path: '/products/safety-equipment' },
+                { label: 'Lab Furniture', path: '/products/laboratory-furniture' },
+              ].map(item => (
+                <li key={item.path}>
+                  <Link to={item.path} className="group flex items-center text-sm font-medium hover:text-[#ea7000] transition-colors">
+                    <ChevronRight className="h-3 w-3 mr-2 text-slate-600 group-hover:text-[#ea7000] transition-colors" /> {item.label}
                   </Link>
                 </li>
               ))}
@@ -99,7 +106,7 @@ const Footer = () => {
             &copy; {new Date().getFullYear()} <span className="text-white">{settings?.companyName || 'AVON PHARMO CHEM (PVT) LTD'}</span>. ALL RIGHTS RESERVED.
           </p>
           <div className="flex items-center gap-6">
-            <Link to="/privacy" className="hover:text-white transition-colors">PRIVACY POLICY</Link>
+            <Link to="/privacy-policy" className="hover:text-white transition-colors">PRIVACY POLICY</Link>
             <Link to="/terms" className="hover:text-white transition-colors">TERMS OF SERVICE</Link>
             <Link to="/sitemap" className="hover:text-white transition-colors">SITEMAP</Link>
           </div>

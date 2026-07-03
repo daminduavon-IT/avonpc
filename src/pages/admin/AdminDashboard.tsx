@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Layers, Tag, FileText, TrendingUp, Clock, MessageSquare } from 'lucide-react';
-import { getDashboardStats, getQuotes, QuoteRequest } from '@/lib/firestore-services';
+import { getDashboardStats, getQuotes, QuoteRequest } from '@/lib/supabase-services';
 
 const statusColor: Record<string, string> = {
   'New': 'bg-accent/10 text-accent',
@@ -23,7 +23,7 @@ const AdminDashboard = () => {
         setStats(s);
         setRecentQuotes(q.slice(0, 5));
       } catch (err) {
-        console.error('Dashboard load error:', err);
+        console.error('Failed to load dashboard:', err);
       } finally {
         setLoading(false);
       }

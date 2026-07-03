@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Search, Menu, X, ChevronDown, FileText, Phone, Mail } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Search, Menu, X, ChevronDown, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
 import { useAuth } from '@/context/AuthContext';
@@ -9,7 +9,6 @@ import avonLogo from '@/assets/avon-logo.png';
 
 const navItems = [
   { label: 'Home', path: '/' },
-  { label: 'About Us', path: '/about' },
   {
     label: 'Products', path: '/products',
     children: [
@@ -24,7 +23,6 @@ const navItems = [
   },
   { label: 'Brands', path: '/brands' },
   { label: 'Industries', path: '/industries' },
-  { label: 'Contact Us', path: '/contact' },
 ];
 
 const Header = () => {
@@ -36,6 +34,16 @@ const Header = () => {
   const { user } = useAuth();
   const { settings } = useSettings();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
 
   const isActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
@@ -45,8 +53,8 @@ const Header = () => {
       <div className="bg-topbar text-topbar-foreground text-xs sm:text-sm">
         <div className="container-main flex items-center justify-between py-2">
           <div className="flex items-center gap-4">
-            <span>📞 {settings?.phone || '+94 11 436 1909'}</span>
-            <span className="hidden sm:inline">✉️ {settings?.email || 'sales2@avonpclk.com'}</span>
+            <span>📞 {settings?.phone || '+94 11 234 5678'}</span>
+            <span className="hidden sm:inline">✉️ {settings?.email || 'sales@avonpc.com'}</span>
           </div>
           <div className="flex items-center gap-3">
             {user ? (
@@ -73,7 +81,7 @@ const Header = () => {
             <img src={avonLogo} alt="Avon Pharmo Chem" className="h-10 lg:h-14 w-auto" />
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1 bg-muted/40 backdrop-blur-md border border-border/50 rounded-full px-2 py-1.5 shadow-sm">
             {navItems.map((item) => (
               <div
                 key={item.path}
@@ -83,7 +91,7 @@ const Header = () => {
               >
                 <Link
                   to={item.path}
-                  className={`px-3 py-2 text-sm font-medium rounded-md btn-transition flex items-center gap-1 ${isActive(item.path) ? 'text-primary bg-primary/5' : 'text-foreground hover:text-primary hover:bg-primary/5'
+                  className={`px-4 py-2 text-sm font-bold tracking-wide rounded-full btn-transition flex items-center gap-1 ${isActive(item.path) ? 'text-primary bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                     }`}
                 >
                   {item.label}
@@ -115,8 +123,11 @@ const Header = () => {
                 </span>
               )}
             </button>
+            <Link to="/flash-sale" className="hidden sm:block">
+              <Button variant="destructive" size="sm" className="font-black tracking-wide flex items-center gap-1.5 shadow-lg shadow-destructive/30 active:scale-95 transition-all shimmer-bg rounded-lg px-4 border border-destructive/50">⚡ Flash Sale</Button>
+            </Link>
             <Link to="/request-quote" className="hidden sm:block">
-              <Button variant="accent" size="sm">Request Quote</Button>
+              <Button variant="accent" size="sm" className="active:scale-95 transition-all">Request Quote</Button>
             </Link>
             <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 rounded-md hover:bg-muted" aria-label="Menu">
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -127,12 +138,15 @@ const Header = () => {
         {searchOpen && (
           <div className="border-t bg-card animate-fade-in">
             <div className="container-main py-3">
-              <div className="relative">
+              <form onSubmit={handleSearch} className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input type="text" placeholder="Search products, categories, brands..." value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" autoFocus />
-              </div>
+                  className="w-full pl-10 pr-24 py-2.5 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" autoFocus />
+                <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors">
+                  Search
+                </button>
+              </form>
             </div>
           </div>
         )}
@@ -159,8 +173,11 @@ const Header = () => {
                   )}
                 </div>
               ))}
+              <Link to="/flash-sale" onClick={() => setMobileOpen(false)}>
+                <Button variant="destructive" className="w-full mt-3 font-black tracking-wide flex items-center justify-center gap-1.5 shadow-lg shadow-destructive/30 shimmer-bg border border-destructive/50 rounded-lg">⚡ Flash Sale</Button>
+              </Link>
               <Link to="/request-quote" onClick={() => setMobileOpen(false)}>
-                <Button variant="accent" className="w-full mt-3">Request Quote</Button>
+                <Button variant="accent" className="w-full mt-2">Request Quote</Button>
               </Link>
             </div>
           </div>

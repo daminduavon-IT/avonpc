@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useQuote } from '@/context/QuoteContext';
 import { industries } from '@/data/catalog';
-import { getProducts, getCategories, getBrands, getIndustries, FirestoreProduct, FirestoreCategory, FirestoreBrand, FirestoreIndustry } from '@/lib/firestore-services';
+import { getProducts, getCategories, getBrands, getIndustries, FirestoreProduct, FirestoreCategory, FirestoreBrand, FirestoreIndustry } from '@/lib/supabase-services';
 import { useSettings } from '@/context/SettingsContext';
 import { Shield, Truck, Award, HeadphonesIcon, ArrowRight, FlaskConical, FileText, Loader2, CheckCircle2, Plus, Phone, Mail, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -11,7 +11,7 @@ import heroImgPlaceholder from '@/assets/hero-lab.jpg';
 
 const features = [
   { icon: Shield, title: 'Certified Quality', description: 'All products meet international quality standards and certifications.' },
-  { icon: Truck, title: 'Pan-India Delivery', description: 'Fast and reliable delivery to laboratories across India.' },
+  { icon: Truck, title: 'Island-Wide Delivery', description: 'Fast and reliable delivery to laboratories across Sri Lanka.' },
   { icon: Award, title: '30+ Years Experience', description: 'Trusted by thousands of labs since 1992.' },
   { icon: HeadphonesIcon, title: 'Expert Support', description: 'Dedicated technical support team for all your needs.' },
 ];
@@ -25,7 +25,7 @@ const Index = () => {
   const [dbIndustries, setDbIndustries] = useState<FirestoreIndustry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isInCart = (id?: string) => !!id && items.some(i => i.productId === id);
+  const isInCart = (id?: string) => !!id && items.some(i => i.id === id);
 
   const carouselSlides = settings?.heroCarousel && settings.heroCarousel.length >= 4
     ? settings.heroCarousel
@@ -66,8 +66,8 @@ const Index = () => {
         setCategories(fetchedCategories);
         setBrands(fetchedBrands);
         setDbIndustries(fetchedInds);
-      } catch (error) {
-        console.error('Error fetching data:', error);
+      } catch {
+        // silent; page renders with empty state
       } finally {
         setLoading(false);
       }
@@ -157,9 +157,9 @@ const Index = () => {
                 to={`/products/${cat.slug}`}
                 className="group flex flex-col items-center"
               >
-                <div className="w-full aspect-square bg-[#f8f9fa] rounded-3xl border border-gray-100 p-8 mb-6 transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-primary/5 group-hover:-translate-y-2 group-hover:border-primary/20 relative overflow-hidden flex items-center justify-center">
+                <div className="w-full aspect-square bg-[#f8f9fa] rounded-3xl border border-gray-100 mb-6 transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-primary/5 group-hover:-translate-y-2 group-hover:border-primary/20 relative overflow-hidden flex items-center justify-center">
                   {cat.image ? (
-                    <img src={cat.image} alt={cat.name} className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110" />
+                    <img src={cat.image} alt={cat.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   ) : (
                     <FlaskConical className="h-16 w-16 text-primary/20 transition-transform duration-500 group-hover:scale-110" />
                   )}
@@ -189,14 +189,19 @@ const Index = () => {
             {featuredProducts.slice(0, 4).map((product) => {
               const inCart = isInCart(product.id);
               return (
-                <div key={product.id} className="bg-card rounded-2xl border overflow-hidden card-hover group flex flex-col h-full">
+                <div key={product.id} className={`rounded-2xl border overflow-hidden card-hover group flex flex-col h-full animate-fade-in-up transition-transform duration-300 hover:scale-105 ${product.isFlashSale ? 'glass-panel glass-glow border-amber-500/30' : 'bg-card relative'}`}>
                   <Link to={`/product/${product.slug}`} className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center shrink-0">
                     {product.image ? (
                       <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     ) : (
                       <FlaskConical className="h-14 w-14 text-primary/20 transition-transform duration-500 group-hover:scale-110" />
                     )}
-                    <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Featured</span>
+                    {product.featured && !product.isFlashSale && (
+                      <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Featured</span>
+                    )}
+                    {product.isFlashSale && (
+                      <span className="absolute top-3 left-3 bg-destructive text-destructive-foreground text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md shadow-destructive/20 animate-pulse">⚡ Flash Sale</span>
+                    )}
                   </Link>
                   <div className="p-5 flex flex-col flex-1">
                     <div className="mb-auto">
@@ -218,7 +223,34 @@ const Index = () => {
                       )}
                       <p className="text-xs text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{product.shortDescription}</p>
                     </div>
-                    <div className="flex gap-2 pt-2 border-t border-border/50">
+                    {product.isFlashSale ? (
+                      <div className="mb-4">
+                        <div className="mb-2 space-y-1">
+                          <div className="flex justify-between text-[10px] font-black text-amber-500 uppercase tracking-wide">
+                            <span>{product.flashSaleStock !== undefined ? `${product.flashSaleStock} left` : '⚡ Flash Sale'}</span>
+                            {product.flashSaleStock !== undefined && product.flashSaleInitialStock && (
+                              <span className="text-amber-400">{product.flashSaleInitialStock - product.flashSaleStock} sold</span>
+                            )}
+                          </div>
+                          <div className="h-1.5 w-full bg-amber-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" style={{ width: (product.flashSaleStock !== undefined && product.flashSaleInitialStock) ? `${Math.min(100, Math.round((product.flashSaleStock / product.flashSaleInitialStock) * 100))}%` : '70%' }} />
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          {product.flashSalePrice && <span className="gold-gradient-text text-2xl tracking-tighter">Rs {product.flashSalePrice.toLocaleString()}</span>}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-4 relative overflow-hidden flex items-center rounded-lg border border-border/40 p-1">
+                        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-5xl font-black text-muted/30 select-none pointer-events-none whitespace-nowrap tracking-tighter">QUOTE ONLY</span>
+                        <Link to={`/product/${product.slug}`} className="w-full relative z-10">
+                          <Button variant="ghost" size="sm" className="w-full text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all">
+                            Request Spec & Quote
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                    <div className="flex gap-2 pt-2 border-t border-border/50 relative z-10">
                       <Link to={`/product/${product.slug}`} className="flex-1">
                         <Button variant="outline" size="sm" className="w-full text-xs font-semibold h-9 rounded-lg">Details</Button>
                       </Link>
@@ -227,8 +259,8 @@ const Index = () => {
                         size="sm"
                         className={`flex-1 text-xs font-semibold h-9 rounded-lg flex items-center justify-center gap-1.5 transition-all ${inCart ? 'bg-primary/5 border-primary text-primary hover:bg-primary/10' : ''}`}
                         onClick={() => !inCart && addItem({
-                          productId: product.id!, name: product.name, brand: product.brand,
-                          category: product.category, model: product.model, image: product.image, price: product.price
+                          id: product.id!, name: product.name, brand: product.brand,
+                          category: product.category, model: product.model, image: product.image
                         })}
                       >
                         {inCart ? <><CheckCircle2 className="h-3.5 w-3.5" /> In Cart</> : <><Plus className="h-3.5 w-3.5" /> Quote</>}
@@ -327,9 +359,9 @@ const Index = () => {
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-4">Get In Touch</h2>
               <div className="space-y-3 text-sm text-muted-foreground">
-                <p>📍 {settings?.locations?.[0]?.address || '123 Industrial Area, Ahmedabad, Gujarat 380015, India'}</p>
-                <p>📞 {settings?.phone || '+91 79 2583 1234'}</p>
-                <p>✉️ {settings?.email || 'info@avonpc.com'}</p>
+                <p>📍 {settings?.locations?.[0]?.address || 'Avon Pharmo Chem (Pvt) Ltd, Colombo, Sri Lanka'}</p>
+                <p>📞 {settings?.phone || '+94 11 234 5678'}</p>
+                <p>✉️ {settings?.email || 'sales@avonpc.com'}</p>
               </div>
               <Link to="/contact" className="mt-4 inline-block">
                 <Button variant="outline">Contact Us <ArrowRight className="h-4 w-4" /></Button>
